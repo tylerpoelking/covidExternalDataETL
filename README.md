@@ -1,3 +1,5 @@
+[![Build Status](https://travis.ibm.com/gbs-mondelez-garage/covid_impact.svg?token=2ZdBCMyxNNWyU7qr4sC6&branch=master)](https://travis.ibm.com/gbs-mondelez-garage/covid_impact)
+
 covid_impact
 ==============================
 
