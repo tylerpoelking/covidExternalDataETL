@@ -9,7 +9,7 @@ This project assumes you have Anaconda or Miniconda installed on your machine. I
 
 1. `git clone` this repo in the desired directory on your local machine
 2. `cd` into the project directory
-3. Run `conda env update && conda activate <pkg_name>`
+3. Run `conda env update && conda activate mdlz_covid`
 4. Run `pip install -e .`
 5. Run `pre-commit install`
 
