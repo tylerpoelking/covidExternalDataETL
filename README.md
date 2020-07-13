@@ -9,7 +9,7 @@ Getting Started
 ------------
 This project assumes you have Anaconda or Miniconda installed on your machine. If you do not, please install from https://docs.conda.io/en/latest/miniconda.html
 
-1. `git clone` this repo in the desired directory on your local machine
+1. `git clone` this repo in the desired directory on your local machine.
 2. `cd` into the project directory
 3. Run `conda env update && conda activate mdlz_covid`
 4. Run `pip install -e .`
