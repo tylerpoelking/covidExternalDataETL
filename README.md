@@ -1,4 +1,4 @@
-[![Build Status](https://travis.ibm.com/gbs-mondelez-garage/covid_impact.svg?token=2ZdBCMyxNNWyU7qr4sC6&branch=master)](https://travis.ibm.com/gbs-mondelez-garage/covid_impact)
+[![Build Status](https://travis.ibm.com/gbs-mondelez-garage/covid_impact.svg?token=2ZdBCMyxNNWyU7qr4sC6&branch=master)](https://travis.ibm.com/gbs-mondelez-garage/covid_impact) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 covid_impact
 ==============================
@@ -14,6 +14,8 @@ This project assumes you have Anaconda or Miniconda installed on your machine. I
 3. Run `conda env update && conda activate mdlz_covid`
 4. Run `pip install -e .`
 5. Run `pre-commit install`
+
+When revisiting the codebase, make sure you activate the enironment by running `conda activate mdlz_covid`. If you fail to do this, you may run into ImportErrors and could potentially develop code that does not work with the rest of the project dependencies.
 
 Project Organization
 ------------
