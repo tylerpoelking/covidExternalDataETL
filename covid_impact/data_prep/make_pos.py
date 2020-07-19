@@ -4,6 +4,14 @@ from covid_impact.utils.utils import extract_week_of_year, extract_year, cast_do
 
 
 def read_pos_from_db() -> pyspark.sql.DataFrame:
+    """
+    Reads POS data from ``d4sa_us_disc.bluesky_pos_data`` and aggregates out the channel
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+        PySpark dataframe with pos_qty and pos_dollar
+    """
     q = """
         SELECT
         week_ending_date,
@@ -22,6 +30,19 @@ def read_pos_from_db() -> pyspark.sql.DataFrame:
 
 
 def proc_pos(df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame:
+    """
+    Performs minor processings such as date component extraction and casting
+
+    Parameters
+    ----------
+    df : pyspark.sql.DataFrame
+        The raw POS dataframe generated from ``read_pos_from_db`` function
+
+    Returns
+    -------
+    df : pyspark.sql.DataFrame
+        The processed POS DataFrame.
+    """
     dt_col = "week_ending_date"
     df = extract_week_of_year(df, dt_col)
     df = extract_year(df, dt_col)
@@ -33,6 +54,7 @@ def proc_pos(df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame:
 
 
 def prep_data_pos() -> None:
+    """Master function for processing pos data."""
     pos_df = read_pos_from_db()
     pos_df = proc_pos(pos_df)
     # TODO
