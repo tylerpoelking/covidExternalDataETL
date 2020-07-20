@@ -1,3 +1,8 @@
+from pathlib import Path
+import glob
+import pandas as pd
+import os
+
 import pyspark
 import pyspark.sql.functions as F
 
@@ -82,3 +87,74 @@ def cast(df: pyspark.sql.DataFrame, col_name: str, dtype: str) -> pyspark.sql.Da
 
 def cast_double(df: pyspark.sql.DataFrame, col_name: str) -> pyspark.sql.DataFrame:
     return cast(df, col_name, "double")
+
+  
+# Utility
+
+
+def get_project_root() -> Path:
+    """Returns project root folder."""
+    return Path(__file__).parent.parent.parent
+
+
+def get_latest_file(p: Path) -> str:
+    list_of_files = glob.glob(str(p))
+    latest_file_path = max(list_of_files, key=os.path.getctime)
+    return latest_file_path
+
+
+def all_type_check(path: str) -> str:
+    # Glob looks for all types within path
+    if ~path.endswith("*"):
+        path += "*"
+    return path
+
+
+def csv_check(file: str) -> str:
+    # If no .csv given in file param
+    if ~file.endswith(".csv"):
+        file += ".csv"
+    return file
+
+
+def read_ihme(file: str, path: str = "data/external/ihme/*") -> pd.DataFrame:
+    """Return df of latest <file> named csv ihme data that was extracted to path
+    * does not download from ihme *
+
+    :param file: name of the ihme file you want to extract
+    :type file: str, optional
+    :param path: relative path to the file, defaults to 'data/external/ihme/*'
+    :type path: str, optional
+    """
+
+    path = all_type_check(path)
+
+    file = csv_check(file)
+
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}/{file}"))
+
+    return df
+
+
+def read_goog(path: str = "data/external/google/*") -> pd.DataFrame:
+    """Return df of latest <file> named csv ihme data that was extracted to path
+    * does not download from ihme *
+
+    :param path: relative path to the file, defaults to 'data/external/google/*'
+    :type path: str, optional
+    """
+
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
