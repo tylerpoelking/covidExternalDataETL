@@ -22,10 +22,10 @@ from covid_impact.utils.utils import get_project_root
 
 
 proj_root = get_project_root()
-ext_write_path = proj_root / "data/external"
+ext_write_path = str(proj_root / "data/external")
 
 
-def dl_ihme(path: str = ext_write_path / "ihme") -> None:
+def dl_ihme(path: str = ext_write_path + "/ihme") -> None:
     """Downloads zip from ihmecovid19storage website and extracts all contents of zip
     to data/external/ihme
 
@@ -48,7 +48,7 @@ def dl_ihme(path: str = ext_write_path / "ihme") -> None:
     z.close()
 
 
-def dl_covid_track(path: str = ext_write_path / "cov_track/cov_t.csv") -> None:
+def dl_covid_track(path: str = ext_write_path + "/cov_track/cov_t.csv") -> None:
     """Downloads csv from covidtracking states historical api to data/external/covid_tracking
 
     :param path: Path to write the file, defaults to '../data/external/cov_track/'
@@ -62,7 +62,7 @@ def dl_covid_track(path: str = ext_write_path / "cov_track/cov_t.csv") -> None:
     states_daily.to_csv(path)
 
 
-def dl_goog_mob(path: str = ext_write_path / "google/mobility.csv") -> None:
+def dl_goog_mob(path: str = ext_write_path + "/google/mobility.csv") -> None:
     """Downloads csv from covidtracking states historical api to data/external/covid_tracking
 
     :param path: Path to write the file, defaults to '../data/external/cov_track/'

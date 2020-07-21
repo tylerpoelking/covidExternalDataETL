@@ -1,6 +1,5 @@
 from covid_impact.utils.utils import extract_week_of_year, extract_year
 from covid_impact.utils.utils import cast_double
-
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.types import StringType, DoubleType

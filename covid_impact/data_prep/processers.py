@@ -5,6 +5,7 @@
 
 import pandas as pd
 from covid_impact.utils.utils import get_project_root
+import re
 
 
 def date_cols_gen(df: pd.DataFrame) -> pd.DataFrame:
@@ -17,8 +18,13 @@ def date_cols_gen(df: pd.DataFrame) -> pd.DataFrame:
     :rtype: pd.DataFrame
     """
     # Get state action columns
-    date_cols = [col for col in df.columns if "date" in col.lower()]
+    date_cols = [
+        col
+        for col in df.columns
+        if bool(re.search(r"(?<![^\s_-])date(?![^\s_-])", col, flags=re.IGNORECASE))
+    ]
     for d_col in date_cols:
+        print(f"converting {d_col} to datetime")
         # Infer datetime in case format conventions change on ihme side
         df[d_col] = pd.to_datetime(df[d_col], infer_datetime_format=True)
 
@@ -64,6 +70,17 @@ def usa_geo_filter(
     # Add other col
     df = df.merge(us_state_abbrev, how="left", on=state_col_new)
 
+    # Assert all states in us_state_abbrev found and matched
+    states_not_matched = set(us_state_abbrev[state_col_new]) - set(df[state_col_new])
+    assert (
+        len(set(us_state_abbrev[state_col_new]) - set(df[state_col_new])) == 0
+    ), f"States not found in {state_col}: {states_not_matched}"
+
+    # Assert no nulls in state cols
+    assert not df[
+        state_col_new
+    ].hasnans, f"Null Values found in {state_col} after filtering to usa states"
+
     # move the column to head of list using index, pop and insert
     cols = list(df)
     for col in ["state", "state_initial"]:
@@ -96,7 +113,7 @@ def basic_preproc(
     if "V1" in df.columns:
         df.drop("V1", axis=1, inplace=True)
 
-    # For IHME data
+    # For IHME data (remove non USA Georgia)
     if "location_id" in df.columns.values:
         df = df[df["location_id"] != 35]
 
@@ -125,7 +142,12 @@ def g_mob_preproc(g_mob: pd.DataFrame) -> pd.DataFrame:
     """
 
     # Filter out county and country level aggregations
-    g_mob = g_mob[g_mob["sub_region_2"].isna()]
-    g_mob.drop("sub_region_2", axis=1, inplace=True)
+    if "sub_region_2" in g_mob.columns:
+        g_mob = g_mob[g_mob["sub_region_2"].isna()]
+        g_mob.drop("sub_region_2", axis=1, inplace=True)
+    else:
+        print(
+            "sub_region_2 no longer in google mobility data. Check renamed/redefined columns"
+        )
 
     return g_mob

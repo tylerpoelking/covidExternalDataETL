@@ -100,9 +100,6 @@ if __name__ == "__main__":
     # Feat Eng
     ihme_sum = fe_ihme_summary(ihme_sum)
     ihme_all = fe_ihme_sum_to_proj(ihme_proj_cur, ihme_sum)
-    ihme_all[
-        ["state", "date"] + [col for col in ihme_all.columns if "travel_limit" in col]
-    ].to_clipboard()
 
     # ***** Google Mobility Pipeline *****
 
@@ -125,5 +122,3 @@ if __name__ == "__main__":
 
     # Feature Engineer
     g_mob = fe_goog_mob(g_mob)
-
-    g_mob.to_clipboard()

@@ -69,22 +69,21 @@ def get_ihme_policies(df_sum: pd.DataFrame) -> Tuple[list, list]:
     # New
     pol_indicators = ["_start_date", "_end_date"]
 
+    # Extract column names corresponding to policies and their start/end dates
     start_end_cols = ihme_sum_start_end_cols(df_sum, pol_indicators)
-
     policies = ihme_sum_policies_extract(start_end_cols, pol_indicators)
 
-    # #OLD
-    # start_end_cols = [
-    #     pol_col
-    #     for pol_col in df_sum.columns
-    #     if (("_start_date" in pol_col) or ("_end_date" in pol_col))
-    # ]
-
-    # # Policy Columns without date in name
-    # policies = set(
-    #     [c.replace("_start_date", "").replace("_end_date", "")
-    #      for c in start_end_cols]
-    # )
+    # Assert Policy count
+    n_expect_se = 12
+    n_expect_p = n_expect_se / 2
+    n_rec_se = len(start_end_cols)
+    n_rec_p = len(policies)
+    assert (
+        n_rec_se == n_expect_se
+    ), f"Expected {n_expect_se} columns with Start or End dates, received {n_rec_se}"
+    assert (
+        n_rec_p == n_expect_p
+    ), f"Expected {n_expect_p} policy columns, received {n_rec_p}"
 
     return (start_end_cols, policies)
 
@@ -158,6 +157,11 @@ def fe_goog_mob(g_mob: pd.DataFrame) -> pd.DataFrame:
 
     # Get baseline cols for rolling calc
     g_mob_baselines = [col for col in g_mob.columns if "baseline" in col]
+    n_expect_bl = 6
+    n_rec_bl = len(g_mob_baselines)
+    assert (
+        n_rec_bl == n_expect_bl
+    ), f"Expected {n_expect_bl} baseline columns, received {n_rec_bl}"
 
     # Rolling 6 window mean for baseline cals
     g_mob = fe_rolling_calc(
