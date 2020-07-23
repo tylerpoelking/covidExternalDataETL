@@ -6,6 +6,8 @@ from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
 from covid_impact.data_prep.downloaders import dl_covid_track
 from covid_impact.data_prep.downloaders import dl_nyt_track
+from covid_impact.data_prep.downloaders import dl_r_ui
+from covid_impact.data_prep.downloaders import dl_p_ui
 from covid_impact.data_prep.processers import basic_preproc
 from covid_impact.data_prep.processers import g_mob_preproc
 from covid_impact.data_prep.processers import c_track_preproc
@@ -156,3 +158,15 @@ if __name__ == "__main__":
 
     # Feature Engineer
     c_track = fe_c_track(c_track)
+
+    # ***** Socioeconomic Pipeline *****
+
+    # Download
+    dl_r_ui()  # Regular
+    dl_p_ui()  # Pandemic
+
+    # Read
+    # r_ui = read_reg_ui()
+
+    # Basic Preproc
+    # r_ui = basic_preproc(r_ui, "st")

@@ -25,6 +25,17 @@ proj_root = get_project_root()
 ext_write_path = str(proj_root / "data/external")
 
 
+def dir_check(path: str) -> None:
+    """Checks the parent (one directory up) of path exists and if not, creates it
+
+    :param path: path to ensure exists withing system
+    :type path: str
+    """
+    parent = Path(path).parent
+    if not parent.exists():
+        Path.mkdir(parent)
+
+
 def dl_ihme(path: str = ext_write_path + "/ihme") -> None:
     """Downloads zip from ihmecovid19storage website and extracts all contents of zip
     to data/external/ihme
@@ -54,9 +65,7 @@ def dl_goog_mob(path: str = ext_write_path + "/google/mobility.csv") -> None:
     :param path: Path to write the file, defaults to '../data/external/cov_track/'
     :type path: str, optional
     """
-    parent = Path(path).parent
-    if not parent.exists():
-        Path.mkdir(parent)
+    dir_check(path)
 
     g_mob = pd.read_csv(
         "https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv"
@@ -70,9 +79,7 @@ def dl_covid_track(path: str = ext_write_path + "/cov_track/cov_t.csv") -> None:
     :param path: Path to write the file, defaults to '../data/external/cov_track/'
     :type path: str, optional
     """
-    parent = Path(path).parent
-    if not parent.exists():
-        Path.mkdir(parent)
+    dir_check(path)
 
     states_daily = pd.read_csv(
         "https://covidtracking.com/api/states/daily.csv", parse_dates=["date"]
@@ -89,12 +96,32 @@ def dl_nyt_track(path: str = ext_write_path + "/nyt_track/cov_t.csv") -> None:
     :param path: Path to write the file, defaults to '../data/external/nyt_track/'
     :type path: str, optional
     """
-    parent = Path(path).parent
-    if not parent.exists():
-        Path.mkdir(parent)
+    dir_check(path)
 
     states_daily = pd.read_csv(
         "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv"
     ).drop(columns=["fips"])
 
     states_daily.to_csv(path, index=False)
+
+
+def dl_r_ui(path: str = ext_write_path + "/socioeconomic/reg_claims.csv") -> None:
+    """Downloads Weekly Claims and Extended Benefits Trigger Data csv from Department of labor ETA data reports data/external/socioeconomic
+
+    :param path: Path to write the file, defaults to '/socioeconomic/reg_claims.csv'
+    :type path: str, optional
+    """
+    dir_check(path)
+    r_ui = pd.read_csv("https://oui.doleta.gov/unemploy/csv/ar539.csv")
+    r_ui.to_csv(path, index=False)
+
+
+def dl_p_ui(path: str = ext_write_path + "/socioeconomic/pand_claims.csv") -> None:
+    """Downloads Pandemic Unemployment Assistance Activities csv from Department of labor ETA data reports data/external/socioeconomic
+
+    :param path: Path to write the file, defaults to '/socioeconomic/pand_claims.csv'
+    :type path: str, optional
+    """
+    dir_check(path)
+    p_ui = pd.read_csv("https://oui.doleta.gov/unemploy/csv/ap902.csv")
+    p_ui.to_csv(path, index=False)
