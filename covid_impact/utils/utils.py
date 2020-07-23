@@ -173,7 +173,7 @@ def read_cov_track(path: str = "data/external/cov_track/*") -> pd.DataFrame:
     latest_path = get_latest_file(abs_path)
 
     # Read
-    df = pd.read_csv((f"{latest_path}"), parse_dates=["date"])
+    df = pd.read_csv((f"{latest_path}"))
 
     return df
 
@@ -182,7 +182,7 @@ def read_nyt_track(path: str = "data/external/nyt_track/*") -> pd.DataFrame:
     """Returns df of latest csv in nyt_track external data path
     * does not download from internet *
 
-    :param path: relative path to the file, defaults to 'data/external/nyt_track/*'
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/nyt_track/*'
     :type path: str, optional
     """
     path = all_type_check(path)
@@ -191,6 +191,44 @@ def read_nyt_track(path: str = "data/external/nyt_track/*") -> pd.DataFrame:
     latest_path = get_latest_file(abs_path)
 
     # Read
-    df = pd.read_csv((f"{latest_path}"), parse_dates=["date"])
+    df = pd.read_csv((f"{latest_path}"))
 
     return df.rename(columns={"cases": "nyt_cases", "deaths": "nyt_deaths"})
+
+
+def read_reg_ui(path: str = "data/external/socioeconomic/reg_claims/*") -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/reg_claims name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/reg_claims/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
+
+
+def read_pand_ui(
+    path: str = "data/external/socioeconomic/pand_claims/*",
+) -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/pand_claims name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/pand_claims/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df

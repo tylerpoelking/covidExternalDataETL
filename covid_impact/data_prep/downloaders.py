@@ -105,10 +105,12 @@ def dl_nyt_track(path: str = ext_write_path + "/nyt_track/cov_t.csv") -> None:
     states_daily.to_csv(path, index=False)
 
 
-def dl_r_ui(path: str = ext_write_path + "/socioeconomic/reg_claims.csv") -> None:
+def dl_r_ui(
+    path: str = ext_write_path + "/socioeconomic/reg_claims/reg_claims.csv",
+) -> None:
     """Downloads Weekly Claims and Extended Benefits Trigger Data csv from Department of labor ETA data reports data/external/socioeconomic
 
-    :param path: Path to write the file, defaults to '/socioeconomic/reg_claims.csv'
+    :param path: Path to write the file, defaults to '/socioeconomic/reg_claims/reg_claims.csv'
     :type path: str, optional
     """
     dir_check(path)
@@ -116,10 +118,12 @@ def dl_r_ui(path: str = ext_write_path + "/socioeconomic/reg_claims.csv") -> Non
     r_ui.to_csv(path, index=False)
 
 
-def dl_p_ui(path: str = ext_write_path + "/socioeconomic/pand_claims.csv") -> None:
+def dl_p_ui(
+    path: str = ext_write_path + "/socioeconomic/pand_claims/pand_claims.csv",
+) -> None:
     """Downloads Pandemic Unemployment Assistance Activities csv from Department of labor ETA data reports data/external/socioeconomic
 
-    :param path: Path to write the file, defaults to '/socioeconomic/pand_claims.csv'
+    :param path: Path to write the file, defaults to '/socioeconomic/pand_claims/pand_claims.csv'
     :type path: str, optional
     """
     dir_check(path)

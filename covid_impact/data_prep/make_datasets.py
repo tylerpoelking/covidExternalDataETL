@@ -2,6 +2,7 @@ from covid_impact.utils.utils import read_ihme
 from covid_impact.utils.utils import read_goog
 from covid_impact.utils.utils import read_cov_track
 from covid_impact.utils.utils import read_nyt_track
+from covid_impact.utils.utils import read_reg_ui
 from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
 from covid_impact.data_prep.downloaders import dl_covid_track
@@ -11,6 +12,7 @@ from covid_impact.data_prep.downloaders import dl_p_ui
 from covid_impact.data_prep.processers import basic_preproc
 from covid_impact.data_prep.processers import g_mob_preproc
 from covid_impact.data_prep.processers import c_track_preproc
+from covid_impact.data_prep.processers import r_ui_preproc
 from covid_impact.feat_eng.feat_engineers import fe_ihme_summary
 from covid_impact.feat_eng.feat_engineers import fe_ihme_sum_to_proj
 from covid_impact.feat_eng.feat_engineers import fe_goog_mob
@@ -163,10 +165,18 @@ if __name__ == "__main__":
 
     # Download
     dl_r_ui()  # Regular
-    dl_p_ui()  # Pandemic
+    # dl_p_ui()  # Pandemic
 
     # Read
-    # r_ui = read_reg_ui()
+    r_ui = read_reg_ui()
+    # p_ui = read_pand_ui()
 
     # Basic Preproc
-    # r_ui = basic_preproc(r_ui, "st")
+    r_ui = basic_preproc(r_ui, "st")
+    # p_ui = basic_preproc(p_ui, "st")
+
+    # Specific Preproc
+    r_ui = r_ui_preproc(r_ui)
+
+    # Write Interim
+    write_interim(r_ui, "r_ui_preproc")

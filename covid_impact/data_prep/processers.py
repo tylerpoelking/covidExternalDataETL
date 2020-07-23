@@ -190,3 +190,53 @@ def c_track_preproc(c_track: pd.DataFrame) -> pd.DataFrame:
     c_track.dropna(how="all", inplace=True)
 
     return c_track
+
+
+def r_ui_preproc(r_ui: pd.DataFrame) -> pd.DataFrame:
+    """Preprocesses COVID Tracking Pandas DataFrame.
+    Precprocesses the DOL Weekly Claims and Extended Benefits Trigger Data.
+    Expected to have already undergone basic preprocessing (basic_preproc)
+
+    :param r_ui: initially preprocessed Covid Tracking DataFrame
+    :type r_ui: pd.DataFrame
+    :return: fully preprocessed Covid Tracking DataFrame
+    :rtype: pd.DataFrame
+    """
+
+    col_map = {
+        "c1": "wk_num",
+        "c2": "refl_wk_date",
+        "c3": "IC",
+        "c4": "FIC",
+        "c5": "XIC",
+        "c6": "WSIC",
+        "c7": "WSEIC",
+        "c8": "CW",
+        "c9": "FCW",
+        "c10": "XCW",
+        "c11": "WSCW",
+        "c12": "WSECW",
+        "c13": "EBT",
+        "c14": "EBUI",
+        "c15": "ABT",
+        "c16": "ABUI",
+        "c17": "AT",
+        "c18": "CE",
+        "c19": "R",
+        "c20": "AR",
+        "c21": "P",
+        "c22": "status",
+        "c23": "status_chg_date",
+    }
+
+    r_ui.rename(columns=col_map, inplace=True)
+
+    # Drop columns we don't need
+    drop_cols = ["rptdate", "status_chg_date", "curdate", "priorwk_pub", "priorwk"]
+    r_ui.drop(drop_cols, axis=1, inplace=True)
+
+    r_ui["refl_wk_date"] = pd.to_datetime(
+        r_ui["refl_wk_date"], infer_datetime_format=True
+    )
+
+    return r_ui
