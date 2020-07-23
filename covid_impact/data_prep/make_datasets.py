@@ -1,12 +1,18 @@
 from covid_impact.utils.utils import read_ihme
 from covid_impact.utils.utils import read_goog
+from covid_impact.utils.utils import read_cov_track
+from covid_impact.utils.utils import read_nyt_track
 from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
+from covid_impact.data_prep.downloaders import dl_covid_track
+from covid_impact.data_prep.downloaders import dl_nyt_track
 from covid_impact.data_prep.processers import basic_preproc
 from covid_impact.data_prep.processers import g_mob_preproc
+from covid_impact.data_prep.processers import c_track_preproc
 from covid_impact.feat_eng.feat_engineers import fe_ihme_summary
 from covid_impact.feat_eng.feat_engineers import fe_ihme_sum_to_proj
 from covid_impact.feat_eng.feat_engineers import fe_goog_mob
+from covid_impact.feat_eng.feat_engineers import fe_c_track
 from covid_impact.utils.utils import get_project_root
 import pandas as pd
 
@@ -122,3 +128,31 @@ if __name__ == "__main__":
 
     # Feature Engineer
     g_mob = fe_goog_mob(g_mob)
+
+    # ***** COVID Historical Pipeline *****
+
+    # Download
+    dl_covid_track()
+    dl_nyt_track()
+    # Read
+    c_track = read_cov_track()
+    nyt_track = read_nyt_track()
+
+    # Basic Preproc
+    c_track = basic_preproc(c_track, "state")
+    # Basic Preproc
+    nyt_track = basic_preproc(nyt_track, "state")
+
+    # Join Covid Tracking data with New York Times Tracking Data
+    c_track = c_track.merge(
+        nyt_track, on=["state", "state_initial", "date"], how="left", validate="1:1"
+    )
+
+    # Specific Preproc
+    c_track = c_track_preproc(c_track)
+
+    # Write Interim
+    write_interim(c_track, "c_track_preproc")
+
+    # Feature Engineer
+    c_track = fe_c_track(c_track)

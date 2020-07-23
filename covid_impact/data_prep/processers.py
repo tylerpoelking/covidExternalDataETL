@@ -125,8 +125,11 @@ def basic_preproc(
     # Convert date col
     df = date_cols_gen(df)
 
-    # Lowercase all cols
-    df.columns = map(lambda x: x.lower().replace(" ", "_"), df.columns)
+    # Cols - Replace Spaces
+    df.columns = map(lambda x: x.replace(" ", "_"), df.columns)
+
+    if ("state" in df.columns) and ("date" in df.columns):
+        df.sort_values(["state", "date"], inplace=True, ascending=[True, True])
 
     return df
 
@@ -141,13 +144,49 @@ def g_mob_preproc(g_mob: pd.DataFrame) -> pd.DataFrame:
     :rtype: pd.DataFrame
     """
 
+    # Assert sub_region_2 exists
+    assert (
+        "sub_region_2" in g_mob.columns
+    ), "sub_region_2 no longer in google mobility data. Check renamed/redefined columns"
+
     # Filter out county and country level aggregations
-    if "sub_region_2" in g_mob.columns:
-        g_mob = g_mob[g_mob["sub_region_2"].isna()]
-        g_mob.drop("sub_region_2", axis=1, inplace=True)
-    else:
-        print(
-            "sub_region_2 no longer in google mobility data. Check renamed/redefined columns"
-        )
+    g_mob = g_mob[g_mob["sub_region_2"].isna()]
+    g_mob.drop("sub_region_2", axis=1, inplace=True)
 
     return g_mob
+
+
+def c_track_preproc(c_track: pd.DataFrame) -> pd.DataFrame:
+    """Preprocesses COVID Tracking Pandas DataFrame.
+    Expected to have already undergone basic preprocessing (basic_preproc)
+
+    :param c_track: initially preprocessed Covid Tracking DataFrame
+    :type c_track: pd.DataFrame
+    :return: fully preprocessed Covid Tracking DataFrame
+    :rtype: pd.DataFrame
+    """
+
+    c_track["lastUpdateEt"] = pd.to_datetime(c_track["lastUpdateEt"])
+    max_d_checked = c_track["lastUpdateEt"].max()
+    print(f"Max Day Checked: {max_d_checked}")
+    if max_d_checked < pd.Timestamp.today().floor(freq="D"):
+        print(
+            f"Warning, covid tracking max day less than today: {max_d_checked.date()}"
+        )
+
+    # Drop columns with only one value
+    one_val_cols = c_track.nunique()
+    c_track.drop(
+        columns=list(one_val_cols[one_val_cols == 1].index), inplace=True,
+    )
+
+    # Hard Drop uneeded cols
+    c_track.drop(
+        columns=["hash", "total", "dateChecked", "fips", "dateChecked", "checkTimeEt"],
+        inplace=True,
+    )
+
+    # Drop cols with all nulls
+    c_track.dropna(how="all", inplace=True)
+
+    return c_track

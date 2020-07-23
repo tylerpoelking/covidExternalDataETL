@@ -1,5 +1,9 @@
 import pandas as pd
 from typing import Tuple
+from covid_impact.data_prep.processers import usa_geo_filter
+from covid_impact.utils.utils import get_project_root
+
+import numpy as np
 
 
 # from covid_impact.data_prep.processers import usa_geo_filter
@@ -116,31 +120,33 @@ def fe_ihme_sum_to_proj(df_proj: pd.DataFrame, df_sum: pd.DataFrame) -> pd.DataF
     start_end_cols, policies = get_ihme_policies(df_sum)
 
     # Join
-    df_all = df_proj.merge(
+    ihme_all = df_proj.merge(
         df_sum, on=["state", "state_initial", "location_id"], how="left", validate="m:1"
     )
 
     # Add days_on_<policy> and on_<policy>
     for policy in policies:
         # initial days on policy
-        df_all[f"days_on_{policy}"] = (
-            df_all["date"] - df_all[f"{policy}_start_date"]
+        ihme_all[f"days_on_{policy}"] = (
+            ihme_all["date"] - ihme_all[f"{policy}_start_date"]
         ).dt.days
 
         # filter to 0 based on before start policy date and 0 after end date
-        df_all.loc[
+        ihme_all.loc[
             (
-                (df_all["date"] > df_all[f"{policy}_end_date"])
-                | (df_all[f"days_on_{policy}"] < 0)
+                (ihme_all["date"] > ihme_all[f"{policy}_end_date"])
+                | (ihme_all[f"days_on_{policy}"] < 0)
             ),
             f"days_on_{policy}",
         ] = 0
 
         # Add binary col for whether policy active
-        df_all.loc[df_all[f"days_on_{policy}"] > 0, f"on_{policy}"] = 1
-        df_all[f"on_{policy}"].fillna(0, inplace=True)
+        ihme_all.loc[ihme_all[f"days_on_{policy}"] > 0, f"on_{policy}"] = 1
+        ihme_all[f"on_{policy}"].fillna(0, inplace=True)
 
-    return df_all
+    ihme_all.sort_values(["state", "date"], inplace=True, ascending=[True, True])
+
+    return ihme_all
 
 
 # Google Mobility Single Call FE function
@@ -169,3 +175,29 @@ def fe_goog_mob(g_mob: pd.DataFrame) -> pd.DataFrame:
     )
 
     return g_mob
+
+
+def fe_c_track(c_track: pd.DataFrame) -> pd.DataFrame:
+
+    # State level population and avg income per 2018 census
+    us_pop_inc = pd.read_csv(
+        get_project_root() / "data/external/other/population_avg_inc.csv"
+    )
+
+    # Assure filtered to 51 usa states
+    us_pop_inc = usa_geo_filter(us_pop_inc, "state")
+
+    c_track = c_track.merge(
+        us_pop_inc, on=["state", "state_initial"], how="left", validate="m:1"
+    )
+
+    # generate population in millions
+    c_track["state_pop_mil"] = np.round(c_track["state_pop"] / 1000000, 4)
+
+    # Daily increases in per mil of population
+    for col in [col for col in c_track.columns if "increase" in col.lower()]:
+        c_track[f"{col}_per_mil"] = np.round(
+            c_track[col] * 1000000 / c_track["state_pop"], 4
+        )
+
+    return c_track

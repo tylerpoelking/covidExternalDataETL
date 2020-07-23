@@ -88,7 +88,7 @@ def cast(df: pyspark.sql.DataFrame, col_name: str, dtype: str) -> pyspark.sql.Da
 def cast_double(df: pyspark.sql.DataFrame, col_name: str) -> pyspark.sql.DataFrame:
     return cast(df, col_name, "double")
 
-  
+
 # Utility
 
 
@@ -142,8 +142,8 @@ def read_ihme(file: str, path: str = "data/external/ihme/*") -> pd.DataFrame:
 
 
 def read_goog(path: str = "data/external/google/*") -> pd.DataFrame:
-    """Return df of latest <file> named csv ihme data that was extracted to path
-    * does not download from ihme *
+    """Returns df of latest csv in google external data path
+    * does not download from internet *
 
     :param path: relative path to the file, defaults to 'data/external/google/*'
     :type path: str, optional
@@ -158,3 +158,39 @@ def read_goog(path: str = "data/external/google/*") -> pd.DataFrame:
     df = pd.read_csv((f"{latest_path}"))
 
     return df
+
+
+def read_cov_track(path: str = "data/external/cov_track/*") -> pd.DataFrame:
+    """Returns df of latest csv in cov_track external data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/cov_track/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"), parse_dates=["date"])
+
+    return df
+
+
+def read_nyt_track(path: str = "data/external/nyt_track/*") -> pd.DataFrame:
+    """Returns df of latest csv in nyt_track external data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/nyt_track/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"), parse_dates=["date"])
+
+    return df.rename(columns={"cases": "nyt_cases", "deaths": "nyt_deaths"})

@@ -48,22 +48,8 @@ def dl_ihme(path: str = ext_write_path + "/ihme") -> None:
     z.close()
 
 
-def dl_covid_track(path: str = ext_write_path + "/cov_track/cov_t.csv") -> None:
-    """Downloads csv from covidtracking states historical api to data/external/covid_tracking
-
-    :param path: Path to write the file, defaults to '../data/external/cov_track/'
-    :type path: str, optional
-    """
-    parent = Path(path).parent
-    if not parent.exists():
-        Path.mkdir(parent)
-
-    states_daily = pd.read_csv("https://covidtracking.com/api/states/daily.csv")
-    states_daily.to_csv(path)
-
-
 def dl_goog_mob(path: str = ext_write_path + "/google/mobility.csv") -> None:
-    """Downloads csv from covidtracking states historical api to data/external/covid_tracking
+    """Downloads csv from covidtracking states historical api to data/external/cov_track
 
     :param path: Path to write the file, defaults to '../data/external/cov_track/'
     :type path: str, optional
@@ -76,3 +62,39 @@ def dl_goog_mob(path: str = ext_write_path + "/google/mobility.csv") -> None:
         "https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv"
     )
     g_mob.to_csv(path, index=False)
+
+
+def dl_covid_track(path: str = ext_write_path + "/cov_track/cov_t.csv") -> None:
+    """Downloads csv from covidtracking states historical api to data/external/cov_track
+
+    :param path: Path to write the file, defaults to '../data/external/cov_track/'
+    :type path: str, optional
+    """
+    parent = Path(path).parent
+    if not parent.exists():
+        Path.mkdir(parent)
+
+    states_daily = pd.read_csv(
+        "https://covidtracking.com/api/states/daily.csv", parse_dates=["date"]
+    )
+    states_daily.to_csv(path, index=False)
+
+
+"https://github.com/nytimes/covid-19-data/blob/master/us-states.csv"
+
+
+def dl_nyt_track(path: str = ext_write_path + "/nyt_track/cov_t.csv") -> None:
+    """Downloads csv from https://github.com/nytimes/covid-19-data states historical api to data/external/nyt_tracm
+
+    :param path: Path to write the file, defaults to '../data/external/nyt_track/'
+    :type path: str, optional
+    """
+    parent = Path(path).parent
+    if not parent.exists():
+        Path.mkdir(parent)
+
+    states_daily = pd.read_csv(
+        "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv"
+    ).drop(columns=["fips"])
+
+    states_daily.to_csv(path, index=False)
