@@ -178,6 +178,14 @@ def fe_goog_mob(g_mob: pd.DataFrame) -> pd.DataFrame:
 
 
 def fe_c_track(c_track: pd.DataFrame) -> pd.DataFrame:
+    """Feature Engineer historical covid tracking data. Assumes c_track already undergone basic_preproc and c_track_preproc
+
+
+    :param c_track: preprocessed covid tracking dataset
+    :type c_track: pd.DataFrame
+    :return: preprocessed covid tracking dataset with engineered features
+    :rtype: pd.DataFrame
+    """
 
     # State level population and avg income per 2018 census
     us_pop_inc = pd.read_csv(

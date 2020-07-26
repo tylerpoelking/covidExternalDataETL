@@ -82,7 +82,8 @@ def merge_ihmes(
 
 
 def ihme_pipe() -> None:
-    # ***** IHME Pipeline *****
+    """  IHME Pipeline
+    """
 
     # Download raw unzip to file
     dl_ihme()
@@ -110,9 +111,13 @@ def ihme_pipe() -> None:
     ihme_sum = fe_ihme_summary(ihme_sum)
     ihme_all = fe_ihme_sum_to_proj(ihme_proj_cur, ihme_sum)
 
+    # Write Interim
+    write_interim(ihme_all, "ihme_all_feat_eng")
+
 
 def goog_mob_pipe() -> None:
-    # ***** Google Mobility Pipeline *****
+    """ Google Mobility Pipeline
+    """
 
     # Download
     dl_goog_mob()
@@ -134,9 +139,13 @@ def goog_mob_pipe() -> None:
     # Feature Engineer
     g_mob = fe_goog_mob(g_mob)
 
+    # Write Interim
+    write_interim(g_mob, "g_mob_feat_eng")
+
 
 def covid_track_pipe() -> None:
-    # ***** COVID Historical Pipeline *****
+    """  COVID Historical Pipeline
+    """
 
     # Download
     dl_covid_track()
@@ -164,9 +173,13 @@ def covid_track_pipe() -> None:
     # Feature Engineer
     c_track = fe_c_track(c_track)
 
+    # Write Interim
+    write_interim(c_track, "c_track_feat_eng")
+
 
 def socioecon_pipe() -> None:
-    # ***** Socioeconomic Pipeline *****
+    """ Socioeconomic Pipeline
+    """
 
     # Download
     dl_r_ui()  # Regular
@@ -186,11 +199,22 @@ def socioecon_pipe() -> None:
     # Write Interim
     write_interim(r_ui, "r_ui_preproc")
 
+    # Write Interim
+    write_interim(r_ui, "r_ui_feat_eng")
+
     # Feature Engineer
     # TODO
 
 
 def external_refresh() -> None:
+    """Run each external dataset pipeline. Each pipeline includes:
+    - Downloading latest flat data files and writing to local
+    - Preprocessing data - date conversion, standardized column naming, filtering geographies, etc
+    - writing interim files to local
+    - feature engineering
+
+
+    """
     print("Running IHME")
     ihme_pipe()
     print("Running google mobility")
