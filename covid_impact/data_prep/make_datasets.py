@@ -81,8 +81,7 @@ def merge_ihmes(
     return ihme_all
 
 
-if __name__ == "__main__":
-
+def ihme_pipe() -> None:
     # ***** IHME Pipeline *****
 
     # Download raw unzip to file
@@ -111,6 +110,8 @@ if __name__ == "__main__":
     ihme_sum = fe_ihme_summary(ihme_sum)
     ihme_all = fe_ihme_sum_to_proj(ihme_proj_cur, ihme_sum)
 
+
+def goog_mob_pipe() -> None:
     # ***** Google Mobility Pipeline *****
 
     # Download
@@ -133,6 +134,8 @@ if __name__ == "__main__":
     # Feature Engineer
     g_mob = fe_goog_mob(g_mob)
 
+
+def covid_track_pipe() -> None:
     # ***** COVID Historical Pipeline *****
 
     # Download
@@ -161,6 +164,8 @@ if __name__ == "__main__":
     # Feature Engineer
     c_track = fe_c_track(c_track)
 
+
+def socioecon_pipe() -> None:
     # ***** Socioeconomic Pipeline *****
 
     # Download
@@ -183,3 +188,19 @@ if __name__ == "__main__":
 
     # Feature Engineer
     # TODO
+
+
+def external_refresh() -> None:
+    print("Running IHME")
+    ihme_pipe()
+    print("Running google mobility")
+    goog_mob_pipe()
+    print("Running covid tracking")
+    covid_track_pipe()
+    print("Running socioeconomic")
+    socioecon_pipe()
+    print("Done with external refresh")
+
+
+if __name__ == "__main__":
+    external_refresh()

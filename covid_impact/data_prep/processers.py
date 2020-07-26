@@ -24,7 +24,6 @@ def date_cols_gen(df: pd.DataFrame) -> pd.DataFrame:
         if bool(re.search(r"(?<![^\s_-])date(?![^\s_-])", col, flags=re.IGNORECASE))
     ]
     for d_col in date_cols:
-        print(f"converting {d_col} to datetime")
         # Infer datetime in case format conventions change on ihme side
         df[d_col] = pd.to_datetime(df[d_col], infer_datetime_format=True)
 

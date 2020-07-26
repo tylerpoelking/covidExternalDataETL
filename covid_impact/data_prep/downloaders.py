@@ -121,7 +121,7 @@ def dl_r_ui(
 def dl_p_ui(
     path: str = ext_write_path + "/socioeconomic/pand_claims/pand_claims.csv",
 ) -> None:
-    """Downloads Pandemic Unemployment Assistance Activities csv from Department of labor ETA data reports data/external/socioeconomic
+    """Downloads Pandemic Unemployment Assistance Activities csv from Department of labor ETA data reports to data/external/socioeconomic
 
     :param path: Path to write the file, defaults to '/socioeconomic/pand_claims/pand_claims.csv'
     :type path: str, optional
