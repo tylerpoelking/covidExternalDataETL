@@ -33,7 +33,60 @@ def write_interim(df: pd.DataFrame, name: str) -> None:
     df.to_csv(get_project_root() / f"data/interim/{name}.csv", index=False)
 
 
-# def merge_data(ihme_all: pd.DataFrame, ihme_sum: pd.DataFrame, goog_mob: pd.DataFrame, c_track: pd.DataFrame, s_econ: pd.DataFrame) -> pd.DataFrame:
+def merge_data(
+    ihme_all: pd.DataFrame,
+    goog_mob: pd.DataFrame,
+    c_track: pd.DataFrame,
+    s_econ: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Merge External datasets. Return set with all data minus future looking projections (date should be only up until today or yesterday).
+    aswell as data with future looking projections
+
+    :param ihme_all: ihme dataset that has undergone the ihme pipeline
+    :type ihme_all: pd.DataFrame
+    :param goog_mob: google mobility dataset that has undergone the google mobility pipeline
+    :type goog_mob: pd.DataFrame
+    :param c_track: covid tracking dataset that has undergone the covid tracking pipeline
+    :type c_track: pd.DataFrame
+    :param s_econ: socioeconomic dataset that has undergone the socioeconomic pipeline
+    :type s_econ: pd.DataFrame
+    :return: Return set with all data minus future looking projections (date should be only up until today or yesterday).
+    aswell as data with future looking projections
+    :rtype: pd.DataFrame
+    """
+    # Intersection check
+    assert set(list(ihme_all)).intersection(set(list(goog_mob))).intersection(
+        set(list(c_track))
+    ).intersection(set(list(s_econ))) == {
+        "date",
+        "state",
+        "state_initial",
+    }, "Assumed column names of data not as expected, merged dataset columns may be appended with _x and_y"
+
+    master_current_df = pd.merge(
+        goog_mob,
+        c_track,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+    master_current = pd.merge(
+        master_current_df,
+        s_econ,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+
+    master_proj = pd.merge(
+        ihme_all,
+        master_current,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+
+    return master_current, master_proj
 
 
 def merge_ihmes(
@@ -231,7 +284,9 @@ def socioecon_pipe() -> pd.DataFrame:
     return r_ui
 
 
-def external_refresh() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def generate_externals() -> Tuple[
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+]:
     """Run each external dataset pipeline. Each pipeline includes:
     - Downloading latest flat data files and writing to local
     - Preprocessing data - date conversion, standardized column naming, filtering geographies, etc
@@ -257,36 +312,5 @@ def external_refresh() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Dat
 
 
 if __name__ == "__main__":
-    ihme_all, goog_mob, c_track, s_econ = external_refresh()
-
-    # Intersection check
-    assert set(list(ihme_all)).intersection(set(list(goog_mob))).intersection(
-        set(list(c_track))
-    ).intersection(set(list(s_econ))) == {
-        "date",
-        "state",
-        "state_initial",
-    }, "Assumed column names of data not as expected, merged dataset columns may be appended with _x and_y"
-
-    master_current_df = pd.merge(
-        goog_mob,
-        c_track,
-        on=["state", "state_initial", "date"],
-        how="left",
-        validate="1:1",
-    )
-    master_current_df = pd.merge(
-        master_current_df,
-        s_econ,
-        on=["state", "state_initial", "date"],
-        how="left",
-        validate="1:1",
-    )
-
-    master_proj = pd.merge(
-        ihme_all,
-        master_current_df,
-        on=["state", "state_initial", "date"],
-        how="left",
-        validate="1:1",
-    )
+    ihme_all, goog_mob, c_track, s_econ = generate_externals()
+    master_current, master_proj = merge_data(ihme_all, goog_mob, c_track, s_econ)
