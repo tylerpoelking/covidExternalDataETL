@@ -117,6 +117,29 @@ def csv_check(file: str) -> str:
     return file
 
 
+def column_check(
+    df: pd.DataFrame,
+    path: str = "data/external/other/metadata/columns.csv",
+    rewrite: bool = False,
+) -> None:
+    """Check the columns of df are exactly what is stored in the column 'columns' in the csv stored in path
+
+    :param df: pd.DataFrame whose columns to check
+    :type df: pd.DataFrame
+    :param path: path of csv with 'columns' column, defaults to "data/external/other/metadata/columns.csv"
+    :type path: str, optional
+    :param rewrite: whether to rewrite columns.csv based on columns in df, defaults to False
+    :type rewrite: bool, optional
+    """
+    path = str(get_project_root()) + path
+    if rewrite:
+        pd.DataFrame({"columns": list(df)}).to_csv(path)
+
+    cols = pd.read_csv(path)["columns"]
+    difference = set(list(df)).difference(set(cols))
+    assert len(difference) == 0, f"Columns changed. {difference}"
+
+
 def read_ihme(file: str, path: str = "data/external/ihme/*") -> pd.DataFrame:
     """Return df of latest <file> named csv ihme data that was extracted to path
     * does not download from ihme *

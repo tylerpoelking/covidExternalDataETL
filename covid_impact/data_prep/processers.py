@@ -150,7 +150,7 @@ def g_mob_preproc(g_mob: pd.DataFrame) -> pd.DataFrame:
 
     # Filter out county and country level aggregations
     g_mob = g_mob[g_mob["sub_region_2"].isna()]
-    g_mob.drop("sub_region_2", axis=1, inplace=True)
+    g_mob.drop(["census_fips_code", "sub_region_2"], axis=1, inplace=True)
 
     return g_mob
 

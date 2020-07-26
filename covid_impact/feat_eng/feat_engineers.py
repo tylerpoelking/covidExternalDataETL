@@ -10,6 +10,19 @@ import numpy as np
 # from covid_impact.utils.utils import get_project_root
 
 
+def fe_per_mil(df: pd.DataFrame, cols: list) -> pd.DataFrame:
+    """For each column  in cols, generate the 'per million of population' statistic. Based on state population column state_pop
+
+    :param cols: columns to generate statistic of
+    :type cols: list
+    :return: pd.DataFrame with added columns {col}_per_mil for column in col list
+    :rtype: pd.DataFrame
+    """
+    for col in cols:
+        df[f"{col}_per_mil"] = np.round(df[col] * 1000000 / df["state_pop"], 4)
+    return df
+
+
 def fe_rolling_calc(
     df: pd.DataFrame, gb: list, cols: list, window: int, type: str = "mean"
 ) -> pd.DataFrame:
@@ -203,9 +216,8 @@ def fe_c_track(c_track: pd.DataFrame) -> pd.DataFrame:
     c_track["state_pop_mil"] = np.round(c_track["state_pop"] / 1000000, 4)
 
     # Daily increases in per mil of population
-    for col in [col for col in c_track.columns if "increase" in col.lower()]:
-        c_track[f"{col}_per_mil"] = np.round(
-            c_track[col] * 1000000 / c_track["state_pop"], 4
-        )
+    c_track = fe_per_mil(
+        c_track, [col for col in c_track.columns if "increase" in col.lower()]
+    )
 
     return c_track

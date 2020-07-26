@@ -3,6 +3,7 @@ from covid_impact.utils.utils import read_goog
 from covid_impact.utils.utils import read_cov_track
 from covid_impact.utils.utils import read_nyt_track
 from covid_impact.utils.utils import read_reg_ui
+from covid_impact.utils.utils import column_check
 from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
 from covid_impact.data_prep.downloaders import dl_covid_track
@@ -314,3 +315,5 @@ def generate_externals() -> Tuple[
 if __name__ == "__main__":
     ihme_all, goog_mob, c_track, s_econ = generate_externals()
     master_current, master_proj = merge_data(ihme_all, goog_mob, c_track, s_econ)
+
+    column_check(master_proj)
