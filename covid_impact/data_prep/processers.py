@@ -230,12 +230,17 @@ def r_ui_preproc(r_ui: pd.DataFrame) -> pd.DataFrame:
 
     r_ui.rename(columns=col_map, inplace=True)
 
-    # Drop columns we don't need
-    drop_cols = ["rptdate", "status_chg_date", "curdate", "priorwk_pub", "priorwk"]
-    r_ui.drop(drop_cols, axis=1, inplace=True)
+    r_ui["date"] = pd.to_datetime(r_ui["refl_wk_date"], infer_datetime_format=True)
 
-    r_ui["refl_wk_date"] = pd.to_datetime(
-        r_ui["refl_wk_date"], infer_datetime_format=True
-    )
+    # Drop columns we don't need
+    drop_cols = [
+        "refl_wk_date",
+        "rptdate",
+        "status_chg_date",
+        "curdate",
+        "priorwk_pub",
+        "priorwk",
+    ]
+    r_ui.drop(drop_cols, axis=1, inplace=True)
 
     return r_ui

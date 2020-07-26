@@ -19,6 +19,7 @@ from covid_impact.feat_eng.feat_engineers import fe_goog_mob
 from covid_impact.feat_eng.feat_engineers import fe_c_track
 from covid_impact.utils.utils import get_project_root
 import pandas as pd
+from typing import Tuple
 
 
 def write_interim(df: pd.DataFrame, name: str) -> None:
@@ -29,7 +30,10 @@ def write_interim(df: pd.DataFrame, name: str) -> None:
     :param name: filename to write (without file extension '.csv')
     :type name: str
     """
-    df.to_csv(get_project_root() / f"data/interim/{name}.csv")
+    df.to_csv(get_project_root() / f"data/interim/{name}.csv", index=False)
+
+
+# def merge_data(ihme_all: pd.DataFrame, ihme_sum: pd.DataFrame, goog_mob: pd.DataFrame, c_track: pd.DataFrame, s_econ: pd.DataFrame) -> pd.DataFrame:
 
 
 def merge_ihmes(
@@ -81,8 +85,11 @@ def merge_ihmes(
     return ihme_all
 
 
-def ihme_pipe() -> None:
-    """  IHME Pipeline
+def ihme_pipe() -> pd.DataFrame:
+    """IHME Pipeline
+
+    :return: ihme state summary data, ihme all projections data
+    :rtype:
     """
 
     # Download raw unzip to file
@@ -113,10 +120,16 @@ def ihme_pipe() -> None:
 
     # Write Interim
     write_interim(ihme_all, "ihme_all_feat_eng")
+    write_interim(ihme_sum, "ihme_sum_feat_eng")
+
+    return ihme_all
 
 
-def goog_mob_pipe() -> None:
-    """ Google Mobility Pipeline
+def goog_mob_pipe() -> pd.DataFrame:
+    """Google Mobility Pipeline
+
+    :return: google mobility data
+    :rtype: pd.DataFrame
     """
 
     # Download
@@ -142,9 +155,14 @@ def goog_mob_pipe() -> None:
     # Write Interim
     write_interim(g_mob, "g_mob_feat_eng")
 
+    return g_mob
 
-def covid_track_pipe() -> None:
-    """  COVID Historical Pipeline
+
+def covid_track_pipe() -> pd.DataFrame:
+    """COVID Historical Pipeline
+
+    :return: covid tracking data from covidtracking.com and nyt
+    :rtype: pd.DataFrame
     """
 
     # Download
@@ -176,9 +194,14 @@ def covid_track_pipe() -> None:
     # Write Interim
     write_interim(c_track, "c_track_feat_eng")
 
+    return c_track
 
-def socioecon_pipe() -> None:
-    """ Socioeconomic Pipeline
+
+def socioecon_pipe() -> pd.DataFrame:
+    """Socioeconomic Pipeline
+
+    :return: socioeconomic data
+    :rtype: pd.DataFrame
     """
 
     # Download
@@ -205,26 +228,65 @@ def socioecon_pipe() -> None:
     # Feature Engineer
     # TODO
 
+    return r_ui
 
-def external_refresh() -> None:
+
+def external_refresh() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Run each external dataset pipeline. Each pipeline includes:
     - Downloading latest flat data files and writing to local
     - Preprocessing data - date conversion, standardized column naming, filtering geographies, etc
     - writing interim files to local
     - feature engineering
 
+    :return: ihme data, google mobility data, covid tracking data, socioeconomic data
+    :rtype: pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+
 
     """
     print("Running IHME")
-    ihme_pipe()
+    ihme_all = ihme_pipe()
     print("Running google mobility")
-    goog_mob_pipe()
+    g_mob = goog_mob_pipe()
     print("Running covid tracking")
-    covid_track_pipe()
+    c_track = covid_track_pipe()
     print("Running socioeconomic")
-    socioecon_pipe()
+    s_econ = socioecon_pipe()
     print("Done with external refresh")
+
+    return ihme_all, g_mob, c_track, s_econ
 
 
 if __name__ == "__main__":
-    external_refresh()
+    ihme_all, goog_mob, c_track, s_econ = external_refresh()
+
+    # Intersection check
+    assert set(list(ihme_all)).intersection(set(list(goog_mob))).intersection(
+        set(list(c_track))
+    ).intersection(set(list(s_econ))) == {
+        "date",
+        "state",
+        "state_initial",
+    }, "Assumed column names of data not as expected, merged dataset columns may be appended with _x and_y"
+
+    master_current_df = pd.merge(
+        goog_mob,
+        c_track,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+    master_current_df = pd.merge(
+        master_current_df,
+        s_econ,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+
+    master_proj = pd.merge(
+        ihme_all,
+        master_current_df,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
