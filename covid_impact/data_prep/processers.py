@@ -4,6 +4,7 @@
     """
 
 import pandas as pd
+from datetime import datetime
 from covid_impact.utils.utils import get_project_root
 import re
 
@@ -259,4 +260,9 @@ def f_cip_preproc(f_cip: pd.DataFrame) -> pd.DataFrame:
     for col in ["year", "value"]:
         f_cip[col] = pd.to_numeric(f_cip[col])
 
-    f_cip.drop(columns=["footnotes"], inplace=True)
+    f_cip["month"] = f_cip["periodName"].apply(
+        lambda x: datetime.strptime(x, "%B").month
+    )
+    f_cip.drop(columns=["footnotes", "periodName"], inplace=True)
+
+    return f_cip

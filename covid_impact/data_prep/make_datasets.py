@@ -4,6 +4,7 @@ from covid_impact.utils.utils import read_cov_track
 from covid_impact.utils.utils import read_nyt_track
 from covid_impact.utils.utils import read_reg_ui
 from covid_impact.utils.utils import read_qrtly_unemp
+from covid_impact.utils.utils import read_f_cip
 from covid_impact.utils.utils import column_check
 from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
@@ -11,10 +12,12 @@ from covid_impact.data_prep.downloaders import dl_covid_track
 from covid_impact.data_prep.downloaders import dl_nyt_track
 from covid_impact.data_prep.downloaders import dl_r_ui
 from covid_impact.data_prep.downloaders import dl_p_ui
+from covid_impact.data_prep.downloaders import dl_f_cip
 from covid_impact.data_prep.processers import basic_preproc
 from covid_impact.data_prep.processers import g_mob_preproc
 from covid_impact.data_prep.processers import c_track_preproc
 from covid_impact.data_prep.processers import r_ui_preproc
+from covid_impact.data_prep.processers import f_cip_preproc
 from covid_impact.feat_eng.feat_engineers import fe_ihme_summary
 from covid_impact.feat_eng.feat_engineers import fe_ihme_sum_to_proj
 from covid_impact.feat_eng.feat_engineers import fe_goog_mob
@@ -41,6 +44,7 @@ def merge_data(
     c_track: pd.DataFrame,
     r_ui: pd.DataFrame,
     qrtly_unemp: pd.DataFrame,
+    f_cip: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Merge External datasets. Return set with all data minus future looking projections (date should be only up until today or yesterday).
     aswell as data with future looking projections
@@ -53,6 +57,10 @@ def merge_data(
     :type c_track: pd.DataFrame
     :param r_ui: dol weekly claims dataset that has undergone the socioeconomic pipeline
     :type r_ui: pd.DataFrame
+    :param qrtly_unemp: IBM/Oxford US monthly unemployment past/projections
+    :type qrtly_unemp: pd.DataFrame
+    :param f_cip: bls food cip dataset that has undergone the socioeconomic pipeline
+    :type f_cip: pd.DataFrame
     :return: Return set with all data minus future looking projections (date should be only up until today or yesterday).
     aswell as data with future looking projections
     :rtype: pd.DataFrame
@@ -66,9 +74,10 @@ def merge_data(
         "state_initial",
     }, "Assumed column names of data not as expected, merged dataset columns may be appended with _x and_y"
 
+    og_len = len(c_track)
     master_current_df = pd.merge(
-        goog_mob,
         c_track,
+        goog_mob,
         on=["state", "state_initial", "date"],
         how="left",
         validate="1:1",
@@ -87,6 +96,13 @@ def merge_data(
         how="left",
         validate="m:1",
     )
+    master_current = pd.merge(
+        master_current_df, f_cip, on=["year", "month"], how="left", validate="m:1",
+    )
+    new_len = len(master_current)
+    assert (
+        og_len == new_len
+    ), f"Expected rowcount different in merged master_current. Expected {og_len}, is {new_len}"
 
     master_proj = pd.merge(
         ihme_all,
@@ -263,7 +279,7 @@ def covid_track_pipe() -> pd.DataFrame:
     return c_track
 
 
-def socioecon_pipe() -> Tuple[pd.DataFrame, pd.DataFrame]:
+def socioecon_pipe() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Socioeconomic Pipeline
 
     :return: weekly claim data from department of labor as well as IBM / Oxford Economics quarterly US unemployment projections data
@@ -272,10 +288,12 @@ def socioecon_pipe() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     # Download
     dl_r_ui()  # Regular
+    dl_f_cip()  # Food CIP
     # dl_p_ui()  # Pandemic
 
     # Read
     r_ui = read_reg_ui()
+    f_cip = read_f_cip()
     # p_ui = read_pand_ui()
     qrtly_unemp = read_qrtly_unemp()
 
@@ -285,21 +303,22 @@ def socioecon_pipe() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     # Specific Preproc
     r_ui = r_ui_preproc(r_ui)
+    f_cip = f_cip_preproc(f_cip)
 
     # Write Interim
     write_interim(r_ui, "r_ui_preproc")
-
-    # Write Interim
-    write_interim(r_ui, "r_ui_feat_eng")
+    write_interim(r_ui, "f_cip_preproc")
 
     # Feature Engineer
     # TODO
 
-    return r_ui, qrtly_unemp
+    # Write Interim
+    write_interim(r_ui, "r_ui_feat_eng")
+    return r_ui, qrtly_unemp, f_cip
 
 
 def generate_externals() -> Tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
 ]:
     """Run each external dataset pipeline. Each pipeline includes:
     - Downloading latest flat data files and writing to local
@@ -319,16 +338,16 @@ def generate_externals() -> Tuple[
     print("Running covid tracking")
     c_track = covid_track_pipe()
     print("Running socioeconomic")
-    r_ui, qrtly_unemp = socioecon_pipe()
+    r_ui, qrtly_unemp, f_cip = socioecon_pipe()
     print("Done with external refresh")
 
-    return ihme_all, g_mob, c_track, r_ui, qrtly_unemp
+    return ihme_all, g_mob, c_track, r_ui, qrtly_unemp, f_cip
 
 
 if __name__ == "__main__":
-    ihme_all, goog_mob, c_track, r_ui, qrtly_unemp = generate_externals()
+    ihme_all, goog_mob, c_track, r_ui, qrtly_unemp, f_cip = generate_externals()
     master_current, master_proj = merge_data(
-        ihme_all, goog_mob, c_track, r_ui, qrtly_unemp
+        ihme_all, goog_mob, c_track, r_ui, qrtly_unemp, f_cip
     )
     master_proj.to_clipboard()
-    column_check(master_proj, rewrite=False)
+    column_check(master_proj, rewrite=True)

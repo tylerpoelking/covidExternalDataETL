@@ -260,10 +260,28 @@ def read_pand_ui(
 def read_qrtly_unemp(
     path: str = "data/external/socioeconomic/unemployment_perc/*",
 ) -> pd.DataFrame:
-    """Returns df of latest csv in socioeconomic/unemployment_perc name data path
+    """Returns df of latest csv in socioeconomic/unemployment_perc name data path. Should be IBM/Oxford Unemployment Projections
     * does not download from internet *
 
     :param path: relative path to the file, defaults to 'data/external/socioeconomic/unemployment_perc/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
+
+
+def read_f_cip(path: str = "data/external/socioeconomic/cip/*",) -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/cip name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/cip/*'
     :type path: str, optional
     """
     path = all_type_check(path)

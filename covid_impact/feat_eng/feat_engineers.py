@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 from typing import Tuple
 from covid_impact.data_prep.processers import usa_geo_filter
 from covid_impact.utils.utils import get_project_root
@@ -21,6 +22,7 @@ def fe_date_meta(df: pd.DataFrame) -> pd.DataFrame:
     # Add quarter and year
     df["quarter"] = df["date"].dt.quarter
     df["quarter"] = "q" + df["quarter"].astype(str)
+    df["month"] = df["date"].dt.month
     df["year"] = df["date"].dt.year
     return df
 
