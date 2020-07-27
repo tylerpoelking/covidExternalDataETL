@@ -231,7 +231,6 @@ def r_ui_preproc(r_ui: pd.DataFrame) -> pd.DataFrame:
     r_ui.rename(columns=col_map, inplace=True)
 
     r_ui["date"] = pd.to_datetime(r_ui["refl_wk_date"], infer_datetime_format=True)
-
     # Drop columns we don't need
     drop_cols = [
         "refl_wk_date",
@@ -244,3 +243,20 @@ def r_ui_preproc(r_ui: pd.DataFrame) -> pd.DataFrame:
     r_ui.drop(drop_cols, axis=1, inplace=True)
 
     return r_ui
+
+
+def f_cip_preproc(f_cip: pd.DataFrame) -> pd.DataFrame:
+    """Preprocesses Food CIP Pandas DataFrame.
+    Precprocesses the BLS Monthly CPI for All Urban Consumers (CPI-U) U.S. city average, Food
+    Expected to have already undergone basic preprocessing (basic_preproc)
+
+    :param f_cip: DataFrame of CIP Data
+    :type f_cip: pd.DataFrame
+    :return: fully preprocessed U.S Food CIP DataFrame
+    :rtype: pd.DataFrame
+    """
+
+    for col in ["year", "value"]:
+        f_cip[col] = pd.to_numeric(f_cip[col])
+
+    f_cip.drop(columns=["footnotes"], inplace=True)

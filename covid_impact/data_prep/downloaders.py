@@ -14,6 +14,7 @@ i.e str(ext_write_path/ 'ihme')?
 """
 
 import requests
+import json
 import zipfile
 import io
 import pandas as pd
@@ -108,7 +109,7 @@ def dl_nyt_track(path: str = ext_write_path + "/nyt_track/cov_t.csv") -> None:
 def dl_r_ui(
     path: str = ext_write_path + "/socioeconomic/reg_claims/reg_claims.csv",
 ) -> None:
-    """Downloads Weekly Claims and Extended Benefits Trigger Data csv from Department of labor ETA data reports data/external/socioeconomic
+    """Downloads Weekly Claims and Extended Benefits Trigger Data csv from Department of labor ETA data reports data/external/socioeconomic/reg_claims
 
     :param path: Path to write the file, defaults to '/socioeconomic/reg_claims/reg_claims.csv'
     :type path: str, optional
@@ -121,7 +122,7 @@ def dl_r_ui(
 def dl_p_ui(
     path: str = ext_write_path + "/socioeconomic/pand_claims/pand_claims.csv",
 ) -> None:
-    """Downloads Pandemic Unemployment Assistance Activities csv from Department of labor ETA data reports to data/external/socioeconomic
+    """Downloads Pandemic Unemployment Assistance Activities csv from Department of labor ETA data reports to data/external/socioeconomic/pand_claims
 
     :param path: Path to write the file, defaults to '/socioeconomic/pand_claims/pand_claims.csv'
     :type path: str, optional
@@ -129,3 +130,30 @@ def dl_p_ui(
     dir_check(path)
     p_ui = pd.read_csv("https://oui.doleta.gov/unemploy/csv/ap902.csv")
     p_ui.to_csv(path, index=False)
+
+
+def dl_f_cip(path: str = ext_write_path + "/socioeconomic/cip/food_cip.csv",) -> None:
+    """Downloads CPI for All Urban Consumers (CPI-U) U.S. city average, Food from BLS to data/external/socioeconomic/cip
+
+    :param path: Path to write the file, defaults to '/socioeconomic/cip/food_cip.csv'
+    :type path: str, optional
+    """
+
+    headers = {"Content-type": "application/json"}
+    data = json.dumps(
+        {
+            "seriesid": ["CUUR0000SAF1"],
+            "registrationkey": "97d3ccb5f74e4200b5231220d5b9f2d4",
+            "startyear": "2010",
+            "endyear": str(pd.Timestamp.today().year),
+        }
+    )
+    p = requests.post(
+        "https://api.bls.gov/publicAPI/v2/timeseries/data/", data=data, headers=headers
+    )
+    json_data = json.loads(p.text)
+    assert (
+        json_data["status"] == "REQUEST_SUCCEEDED"
+    ), f'BLS U.S. city average, Food CIP API Call Failure: {json_data["status"]}'
+    f_cip = pd.DataFrame(json_data["Results"]["series"][0]["data"])
+    f_cip.to_csv(path, index=False)
