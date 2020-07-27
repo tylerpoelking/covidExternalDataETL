@@ -10,6 +10,21 @@ import numpy as np
 # from covid_impact.utils.utils import get_project_root
 
 
+def fe_date_meta(df: pd.DataFrame) -> pd.DataFrame:
+    """Add quarter and year features based on 'date' column present in df
+
+    :param df: dataframe with 'date' column that is type pd.datetime
+    :type df: pd.DataFrame
+    :return: df with new colmns quarter and year
+    :rtype: pd.DataFrame
+    """
+    # Add quarter and year
+    df["quarter"] = df["date"].dt.quarter
+    df["quarter"] = "q" + df["quarter"].astype(str)
+    df["year"] = df["date"].dt.year
+    return df
+
+
 def fe_per_mil(df: pd.DataFrame, cols: list) -> pd.DataFrame:
     """For each column  in cols, generate the 'per million of population' statistic. Based on state population column state_pop
 
@@ -159,6 +174,9 @@ def fe_ihme_sum_to_proj(df_proj: pd.DataFrame, df_sum: pd.DataFrame) -> pd.DataF
 
     ihme_all.sort_values(["state", "date"], inplace=True, ascending=[True, True])
 
+    # Add quarter/year
+    ihme_all = fe_date_meta(ihme_all)
+
     return ihme_all
 
 
@@ -219,5 +237,8 @@ def fe_c_track(c_track: pd.DataFrame) -> pd.DataFrame:
     c_track = fe_per_mil(
         c_track, [col for col in c_track.columns if "increase" in col.lower()]
     )
+
+    # Add quarter and year
+    c_track = fe_date_meta(c_track)
 
     return c_track

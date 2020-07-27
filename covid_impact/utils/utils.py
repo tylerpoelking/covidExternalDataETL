@@ -119,7 +119,7 @@ def csv_check(file: str) -> str:
 
 def column_check(
     df: pd.DataFrame,
-    path: str = "data/external/other/metadata/columns.csv",
+    path: str = "/data/external/other/metadata/columns.csv",
     rewrite: bool = False,
 ) -> None:
     """Check the columns of df are exactly what is stored in the column 'columns' in the csv stored in path
@@ -244,6 +244,26 @@ def read_pand_ui(
     * does not download from internet *
 
     :param path: relative path to the file, defaults to 'data/external/socioeconomic/pand_claims/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
+
+
+def read_qrtly_unemp(
+    path: str = "data/external/socioeconomic/unemployment_perc/*",
+) -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/unemployment_perc name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/unemployment_perc/*'
     :type path: str, optional
     """
     path = all_type_check(path)

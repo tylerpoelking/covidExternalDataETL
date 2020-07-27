@@ -3,6 +3,7 @@ from covid_impact.utils.utils import read_goog
 from covid_impact.utils.utils import read_cov_track
 from covid_impact.utils.utils import read_nyt_track
 from covid_impact.utils.utils import read_reg_ui
+from covid_impact.utils.utils import read_qrtly_unemp
 from covid_impact.utils.utils import column_check
 from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
@@ -38,7 +39,8 @@ def merge_data(
     ihme_all: pd.DataFrame,
     goog_mob: pd.DataFrame,
     c_track: pd.DataFrame,
-    s_econ: pd.DataFrame,
+    r_ui: pd.DataFrame,
+    qrtly_unemp: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Merge External datasets. Return set with all data minus future looking projections (date should be only up until today or yesterday).
     aswell as data with future looking projections
@@ -49,8 +51,8 @@ def merge_data(
     :type goog_mob: pd.DataFrame
     :param c_track: covid tracking dataset that has undergone the covid tracking pipeline
     :type c_track: pd.DataFrame
-    :param s_econ: socioeconomic dataset that has undergone the socioeconomic pipeline
-    :type s_econ: pd.DataFrame
+    :param r_ui: dol weekly claims dataset that has undergone the socioeconomic pipeline
+    :type r_ui: pd.DataFrame
     :return: Return set with all data minus future looking projections (date should be only up until today or yesterday).
     aswell as data with future looking projections
     :rtype: pd.DataFrame
@@ -58,7 +60,7 @@ def merge_data(
     # Intersection check
     assert set(list(ihme_all)).intersection(set(list(goog_mob))).intersection(
         set(list(c_track))
-    ).intersection(set(list(s_econ))) == {
+    ).intersection(set(list(r_ui))) == {
         "date",
         "state",
         "state_initial",
@@ -73,10 +75,17 @@ def merge_data(
     )
     master_current = pd.merge(
         master_current_df,
-        s_econ,
+        r_ui,
         on=["state", "state_initial", "date"],
         how="left",
         validate="1:1",
+    )
+    master_current = pd.merge(
+        master_current_df,
+        qrtly_unemp,
+        on=["year", "quarter"],
+        how="left",
+        validate="m:1",
     )
 
     master_proj = pd.merge(
@@ -85,6 +94,9 @@ def merge_data(
         on=["state", "state_initial", "date"],
         how="left",
         validate="1:1",
+    )
+    master_proj = pd.merge(
+        ihme_all, qrtly_unemp, on=["year", "quarter"], how="left", validate="m:1",
     )
 
     return master_current, master_proj
@@ -251,10 +263,10 @@ def covid_track_pipe() -> pd.DataFrame:
     return c_track
 
 
-def socioecon_pipe() -> pd.DataFrame:
+def socioecon_pipe() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Socioeconomic Pipeline
 
-    :return: socioeconomic data
+    :return: weekly claim data from department of labor as well as IBM / Oxford Economics quarterly US unemployment projections data
     :rtype: pd.DataFrame
     """
 
@@ -265,6 +277,7 @@ def socioecon_pipe() -> pd.DataFrame:
     # Read
     r_ui = read_reg_ui()
     # p_ui = read_pand_ui()
+    qrtly_unemp = read_qrtly_unemp()
 
     # Basic Preproc
     r_ui = basic_preproc(r_ui, "st")
@@ -282,11 +295,11 @@ def socioecon_pipe() -> pd.DataFrame:
     # Feature Engineer
     # TODO
 
-    return r_ui
+    return r_ui, qrtly_unemp
 
 
 def generate_externals() -> Tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
 ]:
     """Run each external dataset pipeline. Each pipeline includes:
     - Downloading latest flat data files and writing to local
@@ -294,7 +307,7 @@ def generate_externals() -> Tuple[
     - writing interim files to local
     - feature engineering
 
-    :return: ihme data, google mobility data, covid tracking data, socioeconomic data
+    :return: ihme data, google mobility data, covid tracking data, dol weekly claims, quarterly unemployment
     :rtype: pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
 
 
@@ -306,14 +319,16 @@ def generate_externals() -> Tuple[
     print("Running covid tracking")
     c_track = covid_track_pipe()
     print("Running socioeconomic")
-    s_econ = socioecon_pipe()
+    r_ui, qrtly_unemp = socioecon_pipe()
     print("Done with external refresh")
 
-    return ihme_all, g_mob, c_track, s_econ
+    return ihme_all, g_mob, c_track, r_ui, qrtly_unemp
 
 
 if __name__ == "__main__":
-    ihme_all, goog_mob, c_track, s_econ = generate_externals()
-    master_current, master_proj = merge_data(ihme_all, goog_mob, c_track, s_econ)
-
-    column_check(master_proj)
+    ihme_all, goog_mob, c_track, r_ui, qrtly_unemp = generate_externals()
+    master_current, master_proj = merge_data(
+        ihme_all, goog_mob, c_track, r_ui, qrtly_unemp
+    )
+    master_proj.to_clipboard()
+    column_check(master_proj, rewrite=False)
