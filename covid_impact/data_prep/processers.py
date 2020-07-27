@@ -80,7 +80,7 @@ def usa_geo_filter(
         state_col_new
     ].hasnans, f"Null Values found in {state_col} after filtering to usa states"
 
-    # move the column to head of list using index, pop and insert
+    # move state and state_initial cols to leftmost column indices
     cols = list(df)
     for col in ["state", "state_initial"]:
         cols.insert(0, cols.pop(cols.index(col)))

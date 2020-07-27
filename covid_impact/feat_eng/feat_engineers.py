@@ -168,6 +168,12 @@ def fe_ihme_sum_to_proj(df_proj: pd.DataFrame, df_sum: pd.DataFrame) -> pd.DataF
             f"days_on_{policy}",
         ] = 0
 
+        # filter to 0 if date after today (do not know future status's)
+        ihme_all.loc[
+            ((ihme_all["date"] > pd.Timestamp.today().floor(freq="D"))),
+            f"days_on_{policy}",
+        ] = 0
+
         # Add binary col for whether policy active
         ihme_all.loc[ihme_all[f"days_on_{policy}"] > 0, f"on_{policy}"] = 1
         ihme_all[f"on_{policy}"].fillna(0, inplace=True)
@@ -176,6 +182,15 @@ def fe_ihme_sum_to_proj(df_proj: pd.DataFrame, df_sum: pd.DataFrame) -> pd.DataF
 
     # Add quarter/year
     ihme_all = fe_date_meta(ihme_all)
+
+    # With the exception of date,state, state_initial,year, quarter, sort columns alphabetically
+    # sort alphabetically
+    ihme_all = ihme_all.reindex(sorted(ihme_all.columns), axis=1)
+    # move important columns to front
+    cols = list(ihme_all)
+    for col in ["date", "state", "state_initial", "quarter", "year"]:
+        cols.insert(0, cols.pop(cols.index(col)))
+    ihme_all = ihme_all.reindex(columns=cols)
 
     return ihme_all
 
