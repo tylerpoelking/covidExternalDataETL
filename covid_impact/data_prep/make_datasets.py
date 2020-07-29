@@ -333,6 +333,7 @@ def generate_externals() -> Tuple[
     """
     print("Running IHME")
     ihme_all = ihme_pipe()
+    ihme_all.to_clipboard()
     print("Running google mobility")
     g_mob = goog_mob_pipe()
     print("Running covid tracking")

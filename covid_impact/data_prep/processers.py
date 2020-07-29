@@ -6,6 +6,7 @@
 import pandas as pd
 from datetime import datetime
 from covid_impact.utils.utils import get_project_root
+from covid_impact.data_prep.validators import validate_usa_geo_filter
 import re
 
 
@@ -34,8 +35,14 @@ def date_cols_gen(df: pd.DataFrame) -> pd.DataFrame:
 def usa_geo_filter(
     df: pd.DataFrame, state_col: str, country_col: str = None, usa_val: str = None
 ) -> pd.DataFrame:
-    """Returns df filtered to only USA in geographies of interest.
-    Infers whether initial or long form col passed
+    """Returns df filtered to state_col in in USA in geographies of interest.
+
+    Infers whether state_col is in initial form (OH, FL, etc) or long form (Ohio, Florida, etc).
+    If long form, also adds state_initial column
+    If initial form, also addts state (long form) column
+
+    If df contains a column for country, will filter countr_col column to be usa_val
+    (default assumes no country column/filtering required)
 
 
     :param df: Pandas DataFrame to apply filter
@@ -65,27 +72,20 @@ def usa_geo_filter(
     # Filter USA
     if country_col is not None:
         df = df[df[country_col] == usa_val]
+
     # Filter State
     df = df[df[state_col_new].isin(us_state_abbrev[state_col_new])]
     # Add other col
     df = df.merge(us_state_abbrev, how="left", on=state_col_new)
-
-    # Assert all states in us_state_abbrev found and matched
-    states_not_matched = set(us_state_abbrev[state_col_new]) - set(df[state_col_new])
-    assert (
-        len(set(us_state_abbrev[state_col_new]) - set(df[state_col_new])) == 0
-    ), f"States not found in {state_col}: {states_not_matched}"
-
-    # Assert no nulls in state cols
-    assert not df[
-        state_col_new
-    ].hasnans, f"Null Values found in {state_col} after filtering to usa states"
 
     # move state and state_initial cols to leftmost column indices
     cols = list(df)
     for col in ["state", "state_initial"]:
         cols.insert(0, cols.pop(cols.index(col)))
     df = df.reindex(columns=cols)
+
+    # Validate Expected Output
+    validate_usa_geo_filter(df, us_state_abbrev, state_col_new, country_col, usa_val)
 
     return df
 
@@ -265,4 +265,4 @@ def f_cip_preproc(f_cip: pd.DataFrame) -> pd.DataFrame:
     )
     f_cip.drop(columns=["footnotes", "periodName"], inplace=True)
 
-    return f_cip
+    f_cip
