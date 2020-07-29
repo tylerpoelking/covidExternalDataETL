@@ -2,19 +2,29 @@ from covid_impact.utils.utils import read_ihme
 from covid_impact.utils.utils import read_goog
 from covid_impact.utils.utils import read_cov_track
 from covid_impact.utils.utils import read_nyt_track
+from covid_impact.utils.utils import read_reg_ui
+from covid_impact.utils.utils import read_qrtly_unemp
+from covid_impact.utils.utils import read_f_cip
+from covid_impact.utils.utils import column_check
 from covid_impact.data_prep.downloaders import dl_ihme
 from covid_impact.data_prep.downloaders import dl_goog_mob
 from covid_impact.data_prep.downloaders import dl_covid_track
 from covid_impact.data_prep.downloaders import dl_nyt_track
+from covid_impact.data_prep.downloaders import dl_r_ui
+from covid_impact.data_prep.downloaders import dl_p_ui
+from covid_impact.data_prep.downloaders import dl_f_cip
 from covid_impact.data_prep.processers import basic_preproc
 from covid_impact.data_prep.processers import g_mob_preproc
 from covid_impact.data_prep.processers import c_track_preproc
+from covid_impact.data_prep.processers import r_ui_preproc
+from covid_impact.data_prep.processers import f_cip_preproc
 from covid_impact.feat_eng.feat_engineers import fe_ihme_summary
 from covid_impact.feat_eng.feat_engineers import fe_ihme_sum_to_proj
 from covid_impact.feat_eng.feat_engineers import fe_goog_mob
 from covid_impact.feat_eng.feat_engineers import fe_c_track
 from covid_impact.utils.utils import get_project_root
 import pandas as pd
+from typing import Tuple
 
 
 def write_interim(df: pd.DataFrame, name: str) -> None:
@@ -25,7 +35,87 @@ def write_interim(df: pd.DataFrame, name: str) -> None:
     :param name: filename to write (without file extension '.csv')
     :type name: str
     """
-    df.to_csv(get_project_root() / f"data/interim/{name}.csv")
+    df.to_csv(get_project_root() / f"data/interim/{name}.csv", index=False)
+
+
+def merge_data(
+    ihme_all: pd.DataFrame,
+    goog_mob: pd.DataFrame,
+    c_track: pd.DataFrame,
+    r_ui: pd.DataFrame,
+    qrtly_unemp: pd.DataFrame,
+    f_cip: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Merge External datasets. Return set with all data minus future looking projections (date should be only up until today or yesterday).
+    aswell as data with future looking projections
+
+    :param ihme_all: ihme dataset that has undergone the ihme pipeline
+    :type ihme_all: pd.DataFrame
+    :param goog_mob: google mobility dataset that has undergone the google mobility pipeline
+    :type goog_mob: pd.DataFrame
+    :param c_track: covid tracking dataset that has undergone the covid tracking pipeline
+    :type c_track: pd.DataFrame
+    :param r_ui: dol weekly claims dataset that has undergone the socioeconomic pipeline
+    :type r_ui: pd.DataFrame
+    :param qrtly_unemp: IBM/Oxford US monthly unemployment past/projections
+    :type qrtly_unemp: pd.DataFrame
+    :param f_cip: bls food cip dataset that has undergone the socioeconomic pipeline
+    :type f_cip: pd.DataFrame
+    :return: Return set with all data minus future looking projections (date should be only up until today or yesterday).
+    aswell as data with future looking projections
+    :rtype: pd.DataFrame
+    """
+    # Intersection check
+    assert set(list(ihme_all)).intersection(set(list(goog_mob))).intersection(
+        set(list(c_track))
+    ).intersection(set(list(r_ui))) == {
+        "date",
+        "state",
+        "state_initial",
+    }, "Assumed column names of data not as expected, merged dataset columns may be appended with _x and_y"
+
+    og_len = len(c_track)
+    master_current_df = pd.merge(
+        c_track,
+        goog_mob,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+    master_current = pd.merge(
+        master_current_df,
+        r_ui,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+    master_current = pd.merge(
+        master_current_df,
+        qrtly_unemp,
+        on=["year", "quarter"],
+        how="left",
+        validate="m:1",
+    )
+    master_current = pd.merge(
+        master_current_df, f_cip, on=["year", "month"], how="left", validate="m:1",
+    )
+    new_len = len(master_current)
+    assert (
+        og_len == new_len
+    ), f"Expected rowcount different in merged master_current. Expected {og_len}, is {new_len}"
+
+    master_proj = pd.merge(
+        ihme_all,
+        master_current,
+        on=["state", "state_initial", "date"],
+        how="left",
+        validate="1:1",
+    )
+    master_proj = pd.merge(
+        ihme_all, qrtly_unemp, on=["year", "quarter"], how="left", validate="m:1",
+    )
+
+    return master_current, master_proj
 
 
 def merge_ihmes(
@@ -77,9 +167,12 @@ def merge_ihmes(
     return ihme_all
 
 
-if __name__ == "__main__":
+def ihme_pipe() -> pd.DataFrame:
+    """IHME Pipeline
 
-    # ***** IHME Pipeline *****
+    :return: ihme state summary data, ihme all projections data
+    :rtype:
+    """
 
     # Download raw unzip to file
     dl_ihme()
@@ -107,7 +200,19 @@ if __name__ == "__main__":
     ihme_sum = fe_ihme_summary(ihme_sum)
     ihme_all = fe_ihme_sum_to_proj(ihme_proj_cur, ihme_sum)
 
-    # ***** Google Mobility Pipeline *****
+    # Write Interim
+    write_interim(ihme_all, "ihme_all_feat_eng")
+    write_interim(ihme_sum, "ihme_sum_feat_eng")
+
+    return ihme_all
+
+
+def goog_mob_pipe() -> pd.DataFrame:
+    """Google Mobility Pipeline
+
+    :return: google mobility data
+    :rtype: pd.DataFrame
+    """
 
     # Download
     dl_goog_mob()
@@ -129,7 +234,18 @@ if __name__ == "__main__":
     # Feature Engineer
     g_mob = fe_goog_mob(g_mob)
 
-    # ***** COVID Historical Pipeline *****
+    # Write Interim
+    write_interim(g_mob, "g_mob_feat_eng")
+
+    return g_mob
+
+
+def covid_track_pipe() -> pd.DataFrame:
+    """COVID Historical Pipeline
+
+    :return: covid tracking data from covidtracking.com and nyt
+    :rtype: pd.DataFrame
+    """
 
     # Download
     dl_covid_track()
@@ -156,3 +272,82 @@ if __name__ == "__main__":
 
     # Feature Engineer
     c_track = fe_c_track(c_track)
+
+    # Write Interim
+    write_interim(c_track, "c_track_feat_eng")
+
+    return c_track
+
+
+def socioecon_pipe() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Socioeconomic Pipeline
+
+    :return: weekly claim data from department of labor as well as IBM / Oxford Economics quarterly US unemployment projections data
+    :rtype: pd.DataFrame
+    """
+
+    # Download
+    dl_r_ui()  # Regular
+    dl_f_cip()  # Food CIP
+    # dl_p_ui()  # Pandemic
+
+    # Read
+    r_ui = read_reg_ui()
+    f_cip = read_f_cip()
+    # p_ui = read_pand_ui()
+    qrtly_unemp = read_qrtly_unemp()
+
+    # Basic Preproc
+    r_ui = basic_preproc(r_ui, "st")
+    # p_ui = basic_preproc(p_ui, "st")
+
+    # Specific Preproc
+    r_ui = r_ui_preproc(r_ui)
+    f_cip = f_cip_preproc(f_cip)
+
+    # Write Interim
+    write_interim(r_ui, "r_ui_preproc")
+    write_interim(r_ui, "f_cip_preproc")
+
+    # Feature Engineer
+    # TODO
+
+    # Write Interim
+    write_interim(r_ui, "r_ui_feat_eng")
+    return r_ui, qrtly_unemp, f_cip
+
+
+def generate_externals() -> Tuple[
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+]:
+    """Run each external dataset pipeline. Each pipeline includes:
+    - Downloading latest flat data files and writing to local
+    - Preprocessing data - date conversion, standardized column naming, filtering geographies, etc
+    - writing interim files to local
+    - feature engineering
+
+    :return: ihme data, google mobility data, covid tracking data, dol weekly claims, quarterly unemployment
+    :rtype: pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+
+
+    """
+    print("Running IHME")
+    ihme_all = ihme_pipe()
+    print("Running google mobility")
+    g_mob = goog_mob_pipe()
+    print("Running covid tracking")
+    c_track = covid_track_pipe()
+    print("Running socioeconomic")
+    r_ui, qrtly_unemp, f_cip = socioecon_pipe()
+    print("Done with external refresh")
+
+    return ihme_all, g_mob, c_track, r_ui, qrtly_unemp, f_cip
+
+
+if __name__ == "__main__":
+    ihme_all, goog_mob, c_track, r_ui, qrtly_unemp, f_cip = generate_externals()
+    master_current, master_proj = merge_data(
+        ihme_all, goog_mob, c_track, r_ui, qrtly_unemp, f_cip
+    )
+    master_proj.to_clipboard()
+    column_check(master_proj, rewrite=True)

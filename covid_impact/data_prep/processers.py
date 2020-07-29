@@ -4,6 +4,7 @@
     """
 
 import pandas as pd
+from datetime import datetime
 from covid_impact.utils.utils import get_project_root
 import re
 
@@ -24,7 +25,6 @@ def date_cols_gen(df: pd.DataFrame) -> pd.DataFrame:
         if bool(re.search(r"(?<![^\s_-])date(?![^\s_-])", col, flags=re.IGNORECASE))
     ]
     for d_col in date_cols:
-        print(f"converting {d_col} to datetime")
         # Infer datetime in case format conventions change on ihme side
         df[d_col] = pd.to_datetime(df[d_col], infer_datetime_format=True)
 
@@ -81,7 +81,7 @@ def usa_geo_filter(
         state_col_new
     ].hasnans, f"Null Values found in {state_col} after filtering to usa states"
 
-    # move the column to head of list using index, pop and insert
+    # move state and state_initial cols to leftmost column indices
     cols = list(df)
     for col in ["state", "state_initial"]:
         cols.insert(0, cols.pop(cols.index(col)))
@@ -151,7 +151,7 @@ def g_mob_preproc(g_mob: pd.DataFrame) -> pd.DataFrame:
 
     # Filter out county and country level aggregations
     g_mob = g_mob[g_mob["sub_region_2"].isna()]
-    g_mob.drop("sub_region_2", axis=1, inplace=True)
+    g_mob.drop(["census_fips_code", "sub_region_2"], axis=1, inplace=True)
 
     return g_mob
 
@@ -190,3 +190,79 @@ def c_track_preproc(c_track: pd.DataFrame) -> pd.DataFrame:
     c_track.dropna(how="all", inplace=True)
 
     return c_track
+
+
+def r_ui_preproc(r_ui: pd.DataFrame) -> pd.DataFrame:
+    """Preprocesses COVID Tracking Pandas DataFrame.
+    Precprocesses the DOL Weekly Claims and Extended Benefits Trigger Data.
+    Expected to have already undergone basic preprocessing (basic_preproc)
+
+    :param r_ui: initially preprocessed Covid Tracking DataFrame
+    :type r_ui: pd.DataFrame
+    :return: fully preprocessed Covid Tracking DataFrame
+    :rtype: pd.DataFrame
+    """
+
+    col_map = {
+        "c1": "wk_num",
+        "c2": "refl_wk_date",
+        "c3": "IC",
+        "c4": "FIC",
+        "c5": "XIC",
+        "c6": "WSIC",
+        "c7": "WSEIC",
+        "c8": "CW",
+        "c9": "FCW",
+        "c10": "XCW",
+        "c11": "WSCW",
+        "c12": "WSECW",
+        "c13": "EBT",
+        "c14": "EBUI",
+        "c15": "ABT",
+        "c16": "ABUI",
+        "c17": "AT",
+        "c18": "CE",
+        "c19": "R",
+        "c20": "AR",
+        "c21": "P",
+        "c22": "status",
+        "c23": "status_chg_date",
+    }
+
+    r_ui.rename(columns=col_map, inplace=True)
+
+    r_ui["date"] = pd.to_datetime(r_ui["refl_wk_date"], infer_datetime_format=True)
+    # Drop columns we don't need
+    drop_cols = [
+        "refl_wk_date",
+        "rptdate",
+        "status_chg_date",
+        "curdate",
+        "priorwk_pub",
+        "priorwk",
+    ]
+    r_ui.drop(drop_cols, axis=1, inplace=True)
+
+    return r_ui
+
+
+def f_cip_preproc(f_cip: pd.DataFrame) -> pd.DataFrame:
+    """Preprocesses Food CIP Pandas DataFrame.
+    Precprocesses the BLS Monthly CPI for All Urban Consumers (CPI-U) U.S. city average, Food
+    Expected to have already undergone basic preprocessing (basic_preproc)
+
+    :param f_cip: DataFrame of CIP Data
+    :type f_cip: pd.DataFrame
+    :return: fully preprocessed U.S Food CIP DataFrame
+    :rtype: pd.DataFrame
+    """
+
+    for col in ["year", "value"]:
+        f_cip[col] = pd.to_numeric(f_cip[col])
+
+    f_cip["month"] = f_cip["periodName"].apply(
+        lambda x: datetime.strptime(x, "%B").month
+    )
+    f_cip.drop(columns=["footnotes", "periodName"], inplace=True)
+
+    return f_cip

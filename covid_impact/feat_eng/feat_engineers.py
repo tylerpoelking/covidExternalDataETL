@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 from typing import Tuple
 from covid_impact.data_prep.processers import usa_geo_filter
 from covid_impact.utils.utils import get_project_root
@@ -8,6 +9,35 @@ import numpy as np
 
 # from covid_impact.data_prep.processers import usa_geo_filter
 # from covid_impact.utils.utils import get_project_root
+
+
+def fe_date_meta(df: pd.DataFrame) -> pd.DataFrame:
+    """Add quarter and year features based on 'date' column present in df
+
+    :param df: dataframe with 'date' column that is type pd.datetime
+    :type df: pd.DataFrame
+    :return: df with new colmns quarter and year
+    :rtype: pd.DataFrame
+    """
+    # Add quarter and year
+    df["quarter"] = df["date"].dt.quarter
+    df["quarter"] = "q" + df["quarter"].astype(str)
+    df["month"] = df["date"].dt.month
+    df["year"] = df["date"].dt.year
+    return df
+
+
+def fe_per_mil(df: pd.DataFrame, cols: list) -> pd.DataFrame:
+    """For each column  in cols, generate the 'per million of population' statistic. Based on state population column state_pop
+
+    :param cols: columns to generate statistic of
+    :type cols: list
+    :return: pd.DataFrame with added columns {col}_per_mil for column in col list
+    :rtype: pd.DataFrame
+    """
+    for col in cols:
+        df[f"{col}_per_mil"] = np.round(df[col] * 1000000 / df["state_pop"], 4)
+    return df
 
 
 def fe_rolling_calc(
@@ -140,11 +170,29 @@ def fe_ihme_sum_to_proj(df_proj: pd.DataFrame, df_sum: pd.DataFrame) -> pd.DataF
             f"days_on_{policy}",
         ] = 0
 
+        # filter to 0 if date after today (do not know future status's)
+        ihme_all.loc[
+            ((ihme_all["date"] > pd.Timestamp.today().floor(freq="D"))),
+            f"days_on_{policy}",
+        ] = 0
+
         # Add binary col for whether policy active
         ihme_all.loc[ihme_all[f"days_on_{policy}"] > 0, f"on_{policy}"] = 1
         ihme_all[f"on_{policy}"].fillna(0, inplace=True)
 
     ihme_all.sort_values(["state", "date"], inplace=True, ascending=[True, True])
+
+    # Add quarter/year
+    ihme_all = fe_date_meta(ihme_all)
+
+    # With the exception of date,state, state_initial,year, quarter, sort columns alphabetically
+    # sort alphabetically
+    ihme_all = ihme_all.reindex(sorted(ihme_all.columns), axis=1)
+    # move important columns to front
+    cols = list(ihme_all)
+    for col in ["date", "state", "state_initial", "quarter", "year"]:
+        cols.insert(0, cols.pop(cols.index(col)))
+    ihme_all = ihme_all.reindex(columns=cols)
 
     return ihme_all
 
@@ -178,6 +226,14 @@ def fe_goog_mob(g_mob: pd.DataFrame) -> pd.DataFrame:
 
 
 def fe_c_track(c_track: pd.DataFrame) -> pd.DataFrame:
+    """Feature Engineer historical covid tracking data. Assumes c_track already undergone basic_preproc and c_track_preproc
+
+
+    :param c_track: preprocessed covid tracking dataset
+    :type c_track: pd.DataFrame
+    :return: preprocessed covid tracking dataset with engineered features
+    :rtype: pd.DataFrame
+    """
 
     # State level population and avg income per 2018 census
     us_pop_inc = pd.read_csv(
@@ -195,9 +251,11 @@ def fe_c_track(c_track: pd.DataFrame) -> pd.DataFrame:
     c_track["state_pop_mil"] = np.round(c_track["state_pop"] / 1000000, 4)
 
     # Daily increases in per mil of population
-    for col in [col for col in c_track.columns if "increase" in col.lower()]:
-        c_track[f"{col}_per_mil"] = np.round(
-            c_track[col] * 1000000 / c_track["state_pop"], 4
-        )
+    c_track = fe_per_mil(
+        c_track, [col for col in c_track.columns if "increase" in col.lower()]
+    )
+
+    # Add quarter and year
+    c_track = fe_date_meta(c_track)
 
     return c_track

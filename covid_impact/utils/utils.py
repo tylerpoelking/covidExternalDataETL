@@ -117,6 +117,29 @@ def csv_check(file: str) -> str:
     return file
 
 
+def column_check(
+    df: pd.DataFrame,
+    path: str = "/data/external/other/metadata/columns.csv",
+    rewrite: bool = False,
+) -> None:
+    """Check the columns of df are exactly what is stored in the column 'columns' in the csv stored in path
+
+    :param df: pd.DataFrame whose columns to check
+    :type df: pd.DataFrame
+    :param path: path of csv with 'columns' column, defaults to "data/external/other/metadata/columns.csv"
+    :type path: str, optional
+    :param rewrite: whether to rewrite columns.csv based on columns in df, defaults to False
+    :type rewrite: bool, optional
+    """
+    path = str(get_project_root()) + path
+    if rewrite:
+        pd.DataFrame({"columns": list(df)}).to_csv(path)
+
+    cols = pd.read_csv(path)["columns"]
+    difference = set(list(df)).difference(set(cols))
+    assert len(difference) == 0, f"Columns changed. {difference}"
+
+
 def read_ihme(file: str, path: str = "data/external/ihme/*") -> pd.DataFrame:
     """Return df of latest <file> named csv ihme data that was extracted to path
     * does not download from ihme *
@@ -173,7 +196,7 @@ def read_cov_track(path: str = "data/external/cov_track/*") -> pd.DataFrame:
     latest_path = get_latest_file(abs_path)
 
     # Read
-    df = pd.read_csv((f"{latest_path}"), parse_dates=["date"])
+    df = pd.read_csv((f"{latest_path}"))
 
     return df
 
@@ -182,7 +205,7 @@ def read_nyt_track(path: str = "data/external/nyt_track/*") -> pd.DataFrame:
     """Returns df of latest csv in nyt_track external data path
     * does not download from internet *
 
-    :param path: relative path to the file, defaults to 'data/external/nyt_track/*'
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/nyt_track/*'
     :type path: str, optional
     """
     path = all_type_check(path)
@@ -191,6 +214,82 @@ def read_nyt_track(path: str = "data/external/nyt_track/*") -> pd.DataFrame:
     latest_path = get_latest_file(abs_path)
 
     # Read
-    df = pd.read_csv((f"{latest_path}"), parse_dates=["date"])
+    df = pd.read_csv((f"{latest_path}"))
 
     return df.rename(columns={"cases": "nyt_cases", "deaths": "nyt_deaths"})
+
+
+def read_reg_ui(path: str = "data/external/socioeconomic/reg_claims/*") -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/reg_claims name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/reg_claims/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
+
+
+def read_pand_ui(
+    path: str = "data/external/socioeconomic/pand_claims/*",
+) -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/pand_claims name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/pand_claims/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
+
+
+def read_qrtly_unemp(
+    path: str = "data/external/socioeconomic/unemployment_perc/*",
+) -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/unemployment_perc name data path. Should be IBM/Oxford Unemployment Projections
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/unemployment_perc/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
+
+
+def read_f_cip(path: str = "data/external/socioeconomic/cip/*",) -> pd.DataFrame:
+    """Returns df of latest csv in socioeconomic/cip name data path
+    * does not download from internet *
+
+    :param path: relative path to the file, defaults to 'data/external/socioeconomic/cip/*'
+    :type path: str, optional
+    """
+    path = all_type_check(path)
+    # Find
+    abs_path = get_project_root() / path
+    latest_path = get_latest_file(abs_path)
+
+    # Read
+    df = pd.read_csv((f"{latest_path}"))
+
+    return df
