@@ -198,7 +198,7 @@ def ihme_pipe() -> pd.DataFrame:
 
     # Feat Eng
     ihme_sum = fe_ihme_summary(ihme_sum)
-    ihme_all = fe_ihme_sum_to_proj(ihme_proj_cur, ihme_sum)
+    ihme_all = fe_ihme_sum_to_proj(ihme_all, ihme_sum)
 
     # Write Interim
     write_interim(ihme_all, "ihme_all_feat_eng")
@@ -333,7 +333,6 @@ def generate_externals() -> Tuple[
     """
     print("Running IHME")
     ihme_all = ihme_pipe()
-    ihme_all.to_clipboard()
     print("Running google mobility")
     g_mob = goog_mob_pipe()
     print("Running covid tracking")

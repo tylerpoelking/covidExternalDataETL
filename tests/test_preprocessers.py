@@ -1,9 +1,15 @@
+"""Questions
+    - my imports seem unessarily messy. import exceptions and validator functions?
+    - reading a df in a test and modifying it? (us_state_abbrev
+    """
 from covid_impact.data_prep.processers import date_cols_gen
 from covid_impact.data_prep.processers import usa_geo_filter
 from covid_impact.utils.utils import get_project_root
 from covid_impact.utils.utils import get_latest_file
 from covid_impact.data_prep.validators import state_not_found_error
-
+from covid_impact.data_prep.validators import nulls_found_error
+from covid_impact.data_prep.validators import num_unique_error
+from covid_impact.data_prep.validators import validate_usa_geo_filter
 import pandas as pd
 import pandas.api.types as ptypes
 from pathlib import Path
@@ -39,3 +45,14 @@ def test_usa_geo_filter_missing_states():
     df = pd.DataFrame({"state": ["CA", "OH", "FL", "WA"]})
     with pytest.raises(state_not_found_error):
         assert usa_geo_filter(df, "state")
+
+
+def test_usa_geo_filter_null_in_map_file():
+    us_state_abbrev = pd.read_csv(
+        get_project_root() / "data/external/other/state_names.csv"
+    )
+    df = us_state_abbrev[["state"]]
+    t = pd.DataFrame({"state": [None], "state_initial": [None]})
+    us_state_abbrev = us_state_abbrev.append(t)
+    with pytest.raises(state_not_found_error):
+        assert validate_usa_geo_filter(df, us_state_abbrev, "state")

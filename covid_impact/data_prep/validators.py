@@ -2,8 +2,10 @@ import pandas as pd
 
 
 class state_not_found_error(Exception):
-    def __init__(self, state_col: str, states_not_matched: set) -> None:
-        super().__init__(f"States not found in {state_col}: {states_not_matched}")
+    def __init__(self, states_not_matched: set) -> None:
+        super().__init__(
+            f"States not matched. State in either state_names or df being preprocessed but not both: {states_not_matched}"
+        )
 
 
 class nulls_found_error(Exception):
@@ -26,13 +28,11 @@ def validate_usa_geo_filter(
     usa_val: str = None,
 ) -> None:
     # Assert all states in us_state_abbrev found and matched
-    states_not_matched = set(us_state_abbrev[state_col]) - set(df[state_col])
-    if not (len(set(us_state_abbrev[state_col]) - set(df[state_col])) == 0):
-        raise state_not_found_error(state_col, states_not_matched)
-
-    # Assert no nulls in state cols
-    if not df[state_col].hasnans:
-        raise nulls_found_error(state_col)
+    states_not_matched = set(us_state_abbrev[state_col]).symmetric_difference(
+        set(df[state_col])
+    )
+    if not (len(states_not_matched) == 0):
+        raise state_not_found_error(states_not_matched)
 
     # Country Tests
     if country_col is not None:
