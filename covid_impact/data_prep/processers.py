@@ -265,4 +265,4 @@ def f_cip_preproc(f_cip: pd.DataFrame) -> pd.DataFrame:
     )
     f_cip.drop(columns=["footnotes", "periodName"], inplace=True)
 
-    f_cip
+    return f_cip
