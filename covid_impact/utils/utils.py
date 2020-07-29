@@ -136,7 +136,7 @@ def column_check(
         pd.DataFrame({"columns": list(df)}).to_csv(path)
 
     cols = pd.read_csv(path)["columns"]
-    difference = set(list(df)).difference(set(cols))
+    difference = set(list(df)).symmetric_difference(set(cols))
     assert len(difference) == 0, f"Columns changed. {difference}"
 
 

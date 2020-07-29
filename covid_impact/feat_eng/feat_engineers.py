@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, List
 from covid_impact.data_prep.processers import usa_geo_filter
 from covid_impact.utils.utils import get_project_root
 
@@ -59,21 +59,26 @@ def fe_rolling_calc(
     :return: pd.DataFram with new percent change cols for col in cols. Names suffixed '{window}_perc_chg'
     :rtype: pd.DataFrame
     """
-    if type == "mean":
-        for c in cols:
-            df[f"{c}_{window}_roll_mean"] = (
-                df.groupby(gb)[c].rolling(window).mean().reset_index(0, drop=True)
-            )
-    if type == "median":
-        for c in cols:
-            df[f"{c}_{window}_roll_median"] = (
-                df.groupby(gb)[c].rolling(window).median().reset_index(0, drop=True)
-            )
+
+    for c in cols:
+        df[f"{c}_{window}_roll_mean"] = getattr(
+            df.groupby(gb)[c].rolling(window), type
+        )().reset_index(0, drop=True)
+    # if type == "mean":
+    #     for c in cols:
+    #         df[f"{c}_{window}_roll_mean"] = (
+    #             df.groupby(gb)[c].rolling(window).mean().reset_index(0, drop=True)
+    #         )
+    # if type == "median":
+    #     for c in cols:
+    #         df[f"{c}_{window}_roll_median"] = (
+    #             df.groupby(gb)[c].rolling(window).median().reset_index(0, drop=True)
+    #         )
 
     return df
 
 
-def ihme_sum_start_end_cols(df_sum: pd.DataFrame, sbstrings: list) -> list:
+def ihme_sum_start_end_cols(df_sum: pd.DataFrame, sbstrings: List[str]) -> List[str]:
     return [
         pol_col
         for pol_col in df_sum.columns
