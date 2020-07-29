@@ -75,7 +75,7 @@ def merge_data(
     }, "Assumed column names of data not as expected, merged dataset columns may be appended with _x and_y"
 
     og_len = len(c_track)
-    master_current_df = pd.merge(
+    master_current = pd.merge(
         c_track,
         goog_mob,
         on=["state", "state_initial", "date"],
@@ -83,21 +83,17 @@ def merge_data(
         validate="1:1",
     )
     master_current = pd.merge(
-        master_current_df,
+        master_current,
         r_ui,
         on=["state", "state_initial", "date"],
         how="left",
         validate="1:1",
     )
     master_current = pd.merge(
-        master_current_df,
-        qrtly_unemp,
-        on=["year", "quarter"],
-        how="left",
-        validate="m:1",
+        master_current, qrtly_unemp, on=["year", "quarter"], how="left", validate="m:1",
     )
     master_current = pd.merge(
-        master_current_df, f_cip, on=["year", "month"], how="left", validate="m:1",
+        master_current, f_cip, on=["year", "month"], how="left", validate="m:1",
     )
     new_len = len(master_current)
     assert (
@@ -122,7 +118,7 @@ def merge_ihmes(
     ihme_proj_cur: pd.DataFrame,
     ihme_proj_bes: pd.DataFrame,
     ihme_proj_wor: pd.DataFrame,
-    join_cols: list = ["state", "date"],
+    join_cols: list = ["state", "date", "state_initial"],
 ) -> pd.DataFrame:
     """Takes Preprocessed ihme projection data and combines into one DataFrame.
 
@@ -198,7 +194,7 @@ def ihme_pipe() -> pd.DataFrame:
 
     # Feat Eng
     ihme_sum = fe_ihme_summary(ihme_sum)
-    ihme_all = fe_ihme_sum_to_proj(ihme_all, ihme_sum)
+    ihme_all = fe_ihme_sum_to_proj(ihme_proj_cur, ihme_sum)
 
     # Write Interim
     write_interim(ihme_all, "ihme_all_feat_eng")
@@ -349,5 +345,4 @@ if __name__ == "__main__":
     master_current, master_proj = merge_data(
         ihme_all, goog_mob, c_track, r_ui, qrtly_unemp, f_cip
     )
-    master_proj.to_clipboard()
-    column_check(master_proj, rewrite=True)
+    column_check(master_proj, rewrite=False)

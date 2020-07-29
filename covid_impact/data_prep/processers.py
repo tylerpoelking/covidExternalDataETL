@@ -41,7 +41,7 @@ def usa_geo_filter(
     If long form, also adds state_initial column
     If initial form, also addts state (long form) column
 
-    If df contains a column for country, will filter countr_col column to be usa_val
+    If df contains a column for country, will filter country_col column to be usa_val
     (default assumes no country column/filtering required)
 
 

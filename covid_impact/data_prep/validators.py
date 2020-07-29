@@ -1,19 +1,19 @@
 import pandas as pd
 
 
-class state_not_found_error(Exception):
+class StateNotFoundError(Exception):
     def __init__(self, states_not_matched: set) -> None:
         super().__init__(
             f"States not matched. State in either state_names or df being preprocessed but not both: {states_not_matched}"
         )
 
 
-class nulls_found_error(Exception):
+class NullsFoundError(Exception):
     def __init__(self, col: str) -> None:
         super().__init__(f"Null Values found in {col}")
 
 
-class num_unique_error(Exception):
+class NumUniqueError(Exception):
     def __init__(self, col: str, expect: int, actual: int) -> None:
         super().__init__(
             f"Unexpected number of unique values in {col}, expected {expect}, but is {actual}"
@@ -31,16 +31,19 @@ def validate_usa_geo_filter(
     states_not_matched = set(us_state_abbrev[state_col]).symmetric_difference(
         set(df[state_col])
     )
+    assert (
+        len(states_not_matched) == 0
+    ), f"States not matched. State in either state_names or df being preprocessed but not both: {states_not_matched}"
     if not (len(states_not_matched) == 0):
-        raise state_not_found_error(states_not_matched)
+        raise StateNotFoundError(states_not_matched)
 
     # Country Tests
     if country_col is not None:
         # Assert no nulls in country col
         if not df[country_col].hasnans:
-            raise nulls_found_error(country_col)
+            raise NullsFoundError(country_col)
 
         expected_countries = 1
         actual_countries = df[country_col].nunique()
         if not actual_countries == expected_countries:
-            raise num_unique_error(country_col, expected_countries, actual_countries)
+            raise NumUniqueError(country_col, expected_countries, actual_countries)

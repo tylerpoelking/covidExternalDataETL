@@ -88,9 +88,6 @@ def dl_covid_track(path: str = ext_write_path + "/cov_track/cov_t.csv") -> None:
     states_daily.to_csv(path, index=False)
 
 
-"https://github.com/nytimes/covid-19-data/blob/master/us-states.csv"
-
-
 def dl_nyt_track(path: str = ext_write_path + "/nyt_track/cov_t.csv") -> None:
     """Downloads csv from https://github.com/nytimes/covid-19-data states historical api to data/external/nyt_tracm
 
